@@ -13,14 +13,14 @@ public class Token {
     private int sym;
 
     public Token(int sym, String text, int line, int col) {
-	this.sym = sym;
-	this.text = text;
-	this.line = line;
-	this.col = col;
+        this.sym = sym;
+        this.text = text;
+        this.line = line;
+        this.col = col;
     }
 
     public int getLine() { return line; }
     public int getColumn() { return col; }
-    public String getLexeme() { return text; } // mudei o nome de getText para getLexeme
+    public String getLexeme() { return text; } 
     public int getToken() { return sym; }
 }

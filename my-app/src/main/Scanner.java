@@ -5,23 +5,18 @@ import java.io.IOException;
 
 import java.util.Stack;
 
-
-
-/**
- * Implementação dirigida por tabela
- */
 public class Scanner {
 
 
     private class CharInput {
-	int line, col;
-	char ch;
+		int line, col;
+		char ch;
 
-	CharInput(char ch, int l, int c) {
-	    line = l;
-	    col = c;
-	    this.ch = ch;
-	}
+		CharInput(char ch, int l, int c) {
+			line = l;
+			col = c;
+			this.ch = ch;
+		}
 	
     }
 
