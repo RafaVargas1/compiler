@@ -1,3 +1,9 @@
+//Arthur Vieira da Silva    - 202035013
+//Rafael de Oliveira Vargas - 202035022
+
+import token.*;
+import scanner.*;
+
 import java.io.FileReader;
 import java.io.IOException;
 

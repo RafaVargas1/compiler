@@ -1,0 +1,36 @@
+{-
+    Esse programa é um programa de teste \n
+-}
+
+avg (num :: Int, total :: Int) :: Float {
+    return num / total;
+}
+
+-- Soma apenas se for numero impar
+
+sum_even( num :: Int, cont :: Int) :: Int {
+    if (num % 2 == 0)
+        return;
+    else 
+        cont = num + cont;
+
+    return cont;
+}
+
+cont = 0;
+total = 0;
+iterate (cont < 10) {
+    print(cont);
+    print('\n');
+    print('\t');
+    total = sum_even (cont, total);
+
+    print('\b');
+    print('A');
+}
+
+print( avg(total, 10) )
+print('\n')
+print(0a123)
+print(1.5236)
+print(10)
