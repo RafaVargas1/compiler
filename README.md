@@ -1,7 +1,18 @@
-# compiler
-Projeto prático da matéria de compiladores onde será desenvolvido um compilador utilizando a linguagem Java. O objetivo final será compilar uma linguagem própria. 
+# Compilador
+Projeto prático da disciplina de teoria dos compiladores onde será desenvolvido um compilador utilizando a linguagem Java. O objetivo final será compilar uma linguagem própria.
 
-Para rodar o projeto, estando na raiz do projeto /compiler rode 
+Projeto sendo desenvolvido pelos alunos:
+Arthur Vieira da Silva    - 202035013
+Rafael de Oliveira Vargas - 202035022
 
-javac -d src/build src/main/*.java
-java -cp src/build Main testes/lexico/main-sample.txt
+Para compilar o projeto é preciso primeiro gerar o arquivo do scanner usando o jflex:
+
+jflex ./src/main/scanner/lang.flex
+
+Em seguida compilar o projeto:
+
+javac -d src/build src/main/token/*.java src/main/scanner/*.java src/main/*.java
+
+Finalmente, para executar o programa basta chamar a função principal passando um arquivo de entrada, como no exemplo abaixo:
+
+java -cp src/build Main testes/lexico/testFile1.txt
