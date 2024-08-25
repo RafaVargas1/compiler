@@ -7,6 +7,9 @@ import scanner.*;
 import java.io.FileReader;
 import java.io.IOException;
 
+import ast.StmtList;
+import parsers.MiniLangParser;
+
 public class Main {
     public static void main(String args[]) throws IOException {
         Scanner scanner = new Scanner(new FileReader(args[0]));
@@ -16,5 +19,8 @@ public class Main {
             System.out.println(token.toString());
             token = scanner.nextToken();
         }
+
+        StmtList result = (StmtList)new MiniLangParser().parse(scanner);
+        System.out.println(result);
     }
 }
