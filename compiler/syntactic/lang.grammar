@@ -1,0 +1,172 @@
+%package "syntactic";
+%import "ast.*";
+
+%class "LangParser";
+
+%terminals  DATA, IF, ELSE, ITERATE, READ, PRINT, RETURN, NEW, TRUE, FALSE, NULL,
+            INT, FLOAT, CHAR, BOOL,
+            ID, TYPE, INTEGER, FLOATVAR, CHARACTER,
+            OPENPARENTHESIS, CLOSEPARENTHESIS, OPENKEYS, CLOSEKEYS, OPENBRACKETS, CLOSEBRACKETS,
+            ATRIBUITION, GREATER, SMALLER, EQUAL, DIFFERENT, PLUS, MINUS, MULTI, DIVIDE, INTDIVIDE,
+            AND, DOT, DOTDOT, DOUBLEDOTDOT, COMMA, SEMI, NEGATION,
+            EOF;
+
+%left CLOSEBRACKETS, DOT, CLOSEPARENTHESIS;
+%right NEGATION, UNARY_MINUS;
+%left MULTI, DIVIDE, INTDIVIDE;
+%nonassoc PLUS, MINUS;
+%nonassoc GREATER, SMALLER;
+%left EQUAL, DIFFERENT;
+%left AND;
+
+%typeof DefList = "";
+%typeof Def = "";
+%typeof Data = "";
+%typeof Fun = "";
+%typeof ID = "String";
+%typeof DeclList = "";
+%typeof Decl = "";
+%typeof Type = "";
+%typeof ParamsOpt = "";
+%typeof ReturnOpt = "";
+%typeof Cmd = "";
+%typeof ParamsList = "";
+%typeof Param = "";
+%typeof ReturnType = "";
+%typeof Literal = "";
+%typeof CmdOpt = "";
+%typeof Expr = "";
+%typeof Value = "";
+%typeof ReturnList = "";
+%typeof ExprListOpt = "";
+%typeof ValueListOpt = "";
+%typeof ValueList = "";
+%typeof INTEGER = "Integer";
+%typeof FLOATVAR = "Float";
+%typeof CHARACTER = "String";
+%typeof ExprOpt = "";
+
+%typeof Prog = "SuperNode";
+
+%goal Prog;
+
+Prog = DefList.l                                       {: return l; :}
+     ;
+
+DefList = Def.d SEMI DefList.l                         
+        | Def.d SEMI                                   
+        ;
+
+Def = Data.d                                           
+    | Fun.f
+    ;
+
+Data = DATA ID.i OPENKEYS DeclList.l CLOSEKEYS           
+     ;
+
+DeclList = Decl.d DeclList.l                           
+         | Decl.d                                      
+         ;
+
+Decl = ID.i DOUBLEDOTDOT Type.t SEMI                       
+     ;
+
+Fun = ID.i OPENPARENTHESIS ParamsOpt.p CLOSEPARENTHESIS ReturnOpt.r OPENKEYS Cmd.c CLOSEKEYS
+    ;     
+
+ParamsOpt = ParamsList.l
+          |
+          ;
+
+ParamsList = Param.p                              
+           | Param.p COMMA ParamsList.l           
+           ;
+
+Param = ID.i DOUBLEDOTDOT Type.t                   
+      ;
+
+ReturnOpt = ReturnType.r
+          |
+          ;
+
+ReturnType = DOTDOT Type.t
+           | DOTDOT Type.t COMMA ReturnType.r
+           ;
+
+Type = Type.t OPENBRACKETS CLOSEBRACKETS
+     | Literal.l
+     ;
+
+Literal = INT
+        | CHAR
+        | BOOL
+        | FLOAT
+        | ID.i
+        ;
+
+CmdOpt = Cmd.c
+       |
+       ;
+
+Cmd = OPENKEYS CmdOpt.c CLOSEKEYS    
+    | IF OPENPARENTHESIS Expr.e CLOSEPARENTHESIS Cmd.c
+    | IF OPENPARENTHESIS Expr.e CLOSEPARENTHESIS Cmd.t ELSE Cmd.f
+    | ITERATE OPENPARENTHESIS Expr.e CLOSEPARENTHESIS Cmd.c
+    | READ Value.v SEMI
+    | PRINT Expr.e SEMI
+    | RETURN ReturnList.l SEMI
+    | Value.v ATRIBUITION Expr.e SEMI
+    | ID.i OPENPARENTHESIS ExprListOpt.l CLOSEPARENTHESIS ValueListOpt.v SEMI
+    ;
+
+ReturnList = Expr.e
+           | Expr.e COMMA ReturnList.l
+           ;
+
+ValueListOpt = ValueList.l
+             |
+             ;
+
+ValueList = SMALLER Value.v GREATER
+          | SMALLER Value.v COMMA ValueList.l GREATER
+          ;
+          
+Expr = Expr.e1 AND Expr.e2
+     | Expr.e1 SMALLER Expr.e2
+     | Expr.e1 EQUAL Expr.e2
+     | Expr.e1 DIFFERENT Expr.e2
+     | Expr.e1 PLUS Expr.e2
+     | Expr.e1 MINUS Expr.e2
+     | Expr.e1 MULTI Expr.e2
+     | Expr.e1 DIVIDE Expr.e2
+     | Expr.e1 INTDIVIDE Expr.e2
+     | NOT Expr.e
+     | MINUS Expr.e @ UNARY_MINUS
+     | TRUE
+     | FALSE
+     | NULL
+     | INTEGER.i
+     | FLOATVAR.f
+     | CHARACTER.c
+     | Value.v
+     | OPENPARENTHESIS Expr.e CLOSEPARENTHESIS
+     | NEW Type.t ExprOpt.e
+     | ID.i OPENPARENTHESIS ExprListOpt.l CLOSEPARENTHESIS OPENBRACKETS Expr.e CLOSEBRACKETS
+     ;
+
+ExprOpt = OPENBRACKETS Expr.e CLOSEBRACKETS
+        |
+        ;
+
+ExprListOpt = ExprList.l
+            |
+            ;
+
+ExprList = Expr.e
+         | Expr.e COMMA ExprList.l
+         ;
+         
+Value = ID.i
+      | Value.v OPENBRACKETS Expr.e CLOSEBRACKETS
+      | Value.v DOT ID.i
+      ;
