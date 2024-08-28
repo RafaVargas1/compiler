@@ -19,23 +19,23 @@
 %left EQUAL, DIFFERENT;
 %left AND;
 
-%typeof DefList = "";
-%typeof Def = "";
-%typeof Data = "";
-%typeof Fun = "";
+%typeof DefList = "Node";
+%typeof Def = "Node";
+%typeof Data = "Node";
+%typeof Fun = "Node";
 %typeof ID = "String";
-%typeof DeclList = "";
-%typeof Decl = "";
+%typeof DeclList = "Node";
+%typeof Decl = "Node";
 %typeof Type = "";
 %typeof ParamsOpt = "";
 %typeof ReturnOpt = "";
-%typeof Cmd = "";
-%typeof ParamsList = "";
-%typeof Param = "";
+%typeof Cmd = "Node";
+%typeof CmdOpt = "Node";
+%typeof ParamsList = "Node";
+%typeof Param = "Node";
 %typeof ReturnType = "";
 %typeof Literal = "";
-%typeof CmdOpt = "";
-%typeof Expr = "";
+%typeof Expr = "Expr";
 %typeof Value = "";
 %typeof ReturnList = "";
 %typeof ExprListOpt = "";
@@ -45,44 +45,43 @@
 %typeof FLOATVAR = "Float";
 %typeof CHARACTER = "String";
 %typeof ExprOpt = "";
-
-%typeof Prog = "SuperNode";
+%typeof Prog = "Node";
 
 %goal Prog;
 
 Prog = DefList.l                                       {: return l; :}
      ;
 
-DefList = Def.d SEMI DefList.l                         
-        | Def.d SEMI                                   
+DefList = Def.d SEMI DefList.l                         {: return new NodeList(d, l); :}
+        | Def.d SEMI                                   {: return d; :}                      
         ;
 
-Def = Data.d                                           
-    | Fun.f
+Def = Data.d                                           {: return d; :}
+    | Fun.f                                            {: return f; :}
     ;
 
 Data = DATA ID.i OPENKEYS DeclList.l CLOSEKEYS           
      ;
 
-DeclList = Decl.d DeclList.l                           
-         | Decl.d                                      
+DeclList = Decl.d DeclList.l                           {: return new ParamList(d, l); :}
+         | Decl.d                                      {: return d; :}                        
          ;
 
-Decl = ID.i DOUBLEDOTDOT Type.t SEMI                       
+Decl = ID.i DOUBLEDOTDOT Type.t SEMI                      {: return new Param(i, t); :} 
      ;
 
 Fun = ID.i OPENPARENTHESIS ParamsOpt.p CLOSEPARENTHESIS ReturnOpt.r OPENKEYS Cmd.c CLOSEKEYS
     ;     
 
-ParamsOpt = ParamsList.l
-          |
+ParamsOpt = ParamsList.l                               {: return l; :}
+          |                                            {: return; :}
           ;
 
-ParamsList = Param.p                              
-           | Param.p COMMA ParamsList.l           
+ParamsList = Param.p                                   {: return p; :}    
+           | Param.p COMMA ParamsList.l                {: return new ParamList(p, l); :}     
            ;
 
-Param = ID.i DOUBLEDOTDOT Type.t                   
+Param = ID.i DOUBLEDOTDOT Type.t                       {: return new Param(i, t); :}
       ;
 
 ReturnOpt = ReturnType.r
@@ -133,6 +132,7 @@ ValueList = SMALLER Value.v GREATER
           
 Expr = Expr.e1 AND Expr.e2
      | Expr.e1 SMALLER Expr.e2
+     | Expr.e1 GREATER Expr.e2
      | Expr.e1 EQUAL Expr.e2
      | Expr.e1 DIFFERENT Expr.e2
      | Expr.e1 PLUS Expr.e2
