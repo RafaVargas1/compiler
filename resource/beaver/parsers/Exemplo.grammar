@@ -1,0 +1,45 @@
+%package "parsers";
+%import "ast.*";
+
+%class "MiniLangParser";
+
+%terminals NUM, ID,  MULT, PLUS, 
+           EQ, IF,
+           RB, LB, AP, FP, COLON, SEMI;
+
+%left FP;
+%left MULT;
+%left PLUS;
+
+
+%typeof NUM = "Integer";
+%typeof Expr = "Expr";
+%typeof ID = "String";
+%typeof Stmt = "Node";
+%typeof StmtList = "Node";
+%typeof Els = "Node";
+%typeof Prog = "Node";
+
+%goal Prog;
+
+Prog = StmtList.s                     {:  return s;     :}  
+     ;
+
+StmtList = Stmt.s SEMI StmtList.l     {: return new StmtList(s,l); :}
+         | Stmt.s SEMI                {: return s; :}  
+         ;
+
+Stmt = ID.s EQ Expr.e                     {: return new Attr(new ID(s), e);  :}
+     | Expr.e IF LB StmtList.s ?Els.a RB  {: return new If(e,s,a);           :}
+     | Expr.e                             {: return new Print(e); :}
+     ;
+     
+Els = COLON StmtList.s               {: return s; :}
+     ;
+      
+Expr = Expr.a MULT  Expr.b           {: return new Mul(a,b);                :}
+     | Expr.a PLUS  Expr.b           {: return new Add(a, b);               :}
+     | ID.v                          {: return new ID(v);                   :}
+     | NUM.n                         {: return new Num(n);                  :}
+     | AP Expr.e FP                  {: return e;                  :}
+     ;

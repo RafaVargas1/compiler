@@ -1,0 +1,175 @@
+%package "syntactic";
+%import "ast.*";
+
+%class "LangParser";
+
+%terminals  DATA, IF, ELSE, ITERATE, READ, PRINT, RETURN, NEW, TRUE, FALSE, NULL,
+            INT, FLOAT, CHAR, BOOL,
+            ID, TYPE, INTEGER, FLOATVAR, CHARACTER,
+            OPENPARENTHESIS, CLOSEPARENTHESIS, OPENKEYS, CLOSEKEYS, OPENBRACKETS, CLOSEBRACKETS,
+            ATRIBUITION, GREATER, SMALLER, EQUAL, DIFFERENT, PLUS, MINUS, MULTI, DIVIDE, INTDIVIDE,
+            AND, DOT, DOTDOT, DOUBLEDOTDOT, COMMA, SEMI, NEGATION,
+            EOF;
+
+%left CLOSEBRACKETS, DOT, CLOSEPARENTHESIS;
+%right NEGATION, UNARY_MINUS;
+%left MULTI, DIVIDE, INTDIVIDE;
+%nonassoc PLUS, MINUS;
+%nonassoc GREATER, SMALLER;
+%left EQUAL, DIFFERENT;
+%left AND;
+
+%typeof ID               =    "String";
+%typeof INTEGER          =    "Integer";
+%typeof FLOATVAR         =    "Float";
+%typeof CHARACTER        =    "String";
+
+%typeof Prog             =    "Node";
+%typeof Def              =    "Node";
+%typeof Data             =    "Node";
+%typeof Fun              =    "Node";
+%typeof Decl             =    "Node";
+%typeof Type             =    "Node";
+%typeof Cmd              =    "Node";
+%typeof Param            =    "Node";
+%typeof ReturnType       =    "Node";
+%typeof Literal          =    "Node";
+%typeof Expr             =    "Expr";
+%typeof Value            =    "Node";
+
+%typeof DefList          =    "Node";
+%typeof DeclList         =    "Node";
+%typeof ParamsList       =    "Node";
+%typeof ReturnList       =    "Node";
+%typeof ValueList        =    "Node";
+
+%typeof ParamsOpt        =    "Node";
+%typeof ReturnOpt        =    "Node";
+%typeof ExprListOpt      =    "Node";
+%typeof ValueListOpt     =    "Node";
+%typeof ExprOpt          =    "Node";
+%typeof CmdOpt           =    "Node";
+
+%goal Prog;
+
+Prog = DefList.l                                                                                              {: return l; :}
+     ;
+
+DefList = Def.d SEMI DefList.l                                                                                {: return new NodeList(d, l); :}
+        | Def.d SEMI                                                                                          {: return d; :}                      
+        ;
+
+Def = Data.d                                                                                                  {: return d; :}
+    | Fun.f                                                                                                   {: return f; :}
+    ;
+
+Data = DATA ID.i OPENKEYS DeclList.l CLOSEKEYS                                                                {: return new Data(i, l); :} 
+     ;
+
+DeclList = Decl.d DeclList.l                                                                                  {: return new ParamList(d, l); :}
+         | Decl.d                                                                                             {: return d; :}                        
+         ;
+
+Decl = ID.i DOUBLEDOTDOT Type.t SEMI                                                                          {: return new Param(i, t); :} 
+     ;
+
+Fun = ID.i OPENPARENTHESIS ParamsOpt.p CLOSEPARENTHESIS ReturnOpt.r OPENKEYS CmdOpt.c CLOSEKEYS               {: return new Function(i, p, r, c); :}
+    ;     
+
+ParamsOpt = ParamsList.l                                                                                      {: return l; :}
+          |                                                                                                   {: return null; :}
+          ;
+
+ParamsList = Param.p                                                                                          {: return p; :}    
+           | Param.p COMMA ParamsList.l                                                                       {: return new ParamList(p, l); :}     
+           ;
+
+Param = ID.i DOUBLEDOTDOT Type.t                                                                              {: return new Param(i, t); :}
+      ;
+
+ReturnOpt = ReturnType.r                                                                                      {: return r; :}
+          |                                                                                                   {: return null; :}
+          ;
+
+ReturnType = DOTDOT Type.t                                                                                    {: return new NodeList(t); :}
+           | DOTDOT Type.t COMMA ReturnType.r                                                                 {: return new NodeList(t, r); :}
+           ;
+
+Type = Type.t OPENBRACKETS CLOSEBRACKETS                                                                      {: return new Vector(); :}
+     | Literal.l                                                                                              {: return l; :}
+     ;
+
+Literal = INT                                                                                                 {: return new Int(); :}
+        | CHAR                                                                                                {: return new Char(); :}
+        | BOOL                                                                                                {: return new Bool(); :}
+        | FLOAT                                                                                               {: return new Float(); :}
+        | ID.i                                                                                                {: return new ID(i); :}
+        ;
+
+CmdOpt = Cmd.c                                                                                                {: return c; :}
+       |                                                                                                      {: return null; :}
+       ;
+
+Cmd = OPENKEYS CmdOpt.c CLOSEKEYS                                                                             {: return c; :}
+    | IF OPENPARENTHESIS Expr.e CLOSEPARENTHESIS Cmd.c                                                        {: return new If(e, c); :}
+    | IF OPENPARENTHESIS Expr.e CLOSEPARENTHESIS Cmd.t ELSE Cmd.f                                             {: return new If(e, t, f); :}
+    | ITERATE OPENPARENTHESIS Expr.e CLOSEPARENTHESIS Cmd.c                                                   {: return new Iterate(e, c); :}
+    | READ Value.v SEMI                                                                                       {: return new Read(v); :}
+    | PRINT Expr.e SEMI                                                                                       {: return new Print(e); :}
+    | RETURN ReturnList.l SEMI                                                                                {: return l; :}
+    | Value.v ATRIBUITION Expr.e SEMI                                                                         {: return new Atribuition(v, e); :}
+    | ID.i OPENPARENTHESIS ExprListOpt.l CLOSEPARENTHESIS ValueListOpt.v SEMI                                 {: return new Call(i, l, v); :}
+    ;
+
+ReturnList = Expr.e                                                                                           {: return new Return(e); :}
+           | Expr.e COMMA ReturnList.l                                                                        {: return new Return(e, l); :}
+           ;
+
+ValueListOpt = ValueList.l                                                                                    {: return l; :}
+             |                                                                                                {: return null; :}
+             ;
+
+ValueList = SMALLER Value.v GREATER                                                                           {: return new NodeList(v); :}
+          | SMALLER Value.v COMMA ValueList.l GREATER                                                         {: return new NodeList(v, l); :}
+          ;
+          
+Expr = Expr.e1 AND Expr.e2                                                                                    {: return new And(e1, e2); :}
+     | Expr.e1 SMALLER Expr.e2                                                                                {: return new Smaller(e1, e2); :}
+     | Expr.e1 GREATER Expr.e2                                                                                {: return new Greater(e1, e2); :}
+     | Expr.e1 EQUAL Expr.e2                                                                                  {: return new Equal(e1, e2); :}
+     | Expr.e1 DIFFERENT Expr.e2                                                                              {: return new Different(e1, e2); :}
+     | Expr.e1 PLUS Expr.e2                                                                                   {: return new Addition(e1, e2); :}
+     | Expr.e1 MINUS Expr.e2                                                                                  {: return new Subtraction(e1, e2); :}
+     | Expr.e1 MULTI Expr.e2                                                                                  {: return new Multiplication(e1, e2); :}
+     | Expr.e1 DIVIDE Expr.e2                                                                                 {: return new Division(e1, e2); :}
+     | Expr.e1 INTDIVIDE Expr.e2                                                                              {: return new IntDivision(e1, e2); :}
+     | NOT Expr.e                                                                                             {: return new Not(e); :}
+     | MINUS Expr.e @ UNARY_MINUS                                                                             {: return new Negative(e); :}
+     | TRUE                                                                                                   {: return new True(); :}
+     | FALSE                                                                                                  {: return new False(); :}
+     | NULL                                                                                                   {: return new Null(); :}
+     | INTEGER.i                                                                                              {: return new Integer(i); :}
+     | FLOATVAR.f                                                                                             {: return new FloatVar(f); :}
+     | CHARACTER.c                                                                                            {: return new Character(c); :}
+     | Value.v                                                                                                {: return v; :}
+     | OPENPARENTHESIS Expr.e CLOSEPARENTHESIS                                                                {: return e; :}
+     | NEW Type.t ExprOpt.e                                                                                   {: return new Instance(t, e); :}
+     | ID.i OPENPARENTHESIS ExprListOpt.l CLOSEPARENTHESIS OPENBRACKETS Expr.e CLOSEBRACKETS                  {: return new IndexedCall(i, l, e); :}
+     ;
+
+ExprOpt = OPENBRACKETS Expr.e CLOSEBRACKETS                                                                   {: return e; :}
+        |                                                                                                     {: return null; :}
+        ;
+
+ExprListOpt = ExprList.l                                                                                      {: return l; :}
+            |                                                                                                 {: return null; :}
+            ;
+
+ExprList = Expr.e                                                                                             {: return new ExprList(e); :}
+         | Expr.e COMMA ExprList.l                                                                            {: return new ExprList(e, l); :}
+         ;
+         
+Value = ID.i                                                                                                  {: return new ID(i); :}
+      | Value.v OPENBRACKETS Expr.e CLOSEBRACKETS                                                             {: return new Array(v, e); :}
+      | Value.v DOT ID.i                                                                                      {: return new Component(v, i); :}
+      ;
