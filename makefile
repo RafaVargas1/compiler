@@ -4,7 +4,7 @@ compile: genparser genlex
 genparser: parsers/lang.grammar
 	java -jar beaver-cc-0.9.11.jar -T parsers/lang.grammar
 
-genlex: parsers/lang.jflex genparser
+genlex: parsers/lang.flex genparser
 	java -jar jflex-full-1.8.2.jar parsers/lang.jflex
 
 run: compile
