@@ -3,10 +3,10 @@ package lang.ast;
 public class Function extends Node {
     private String id;
     private Param[] params;
-    private Node returnType;
-    private Node body;
+    private NodeList returnType;
+    private NodeList body;
 
-    public Function(String id, Param[] params, Node returnType, Node body){
+    public Function(String id, Param[] params, NodeList returnType, NodeList body){
         this.id = id;
         this.params = params;
         this.returnType = returnType;

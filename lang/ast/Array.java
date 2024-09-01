@@ -2,10 +2,10 @@ package lang.ast;
 
 public class Array extends Expr {
     private Node id;
-    private Node c;
+    private Expr index;
     
-    public Array(Node id, Node c){
+    public Array(Node id, Expr index){
         this.id = id;
-        this.c = c;
+        this.index = index;
     }
 }

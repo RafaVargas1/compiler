@@ -2,10 +2,10 @@ package lang.ast;
 
 public class Call extends Node {
     private String id;
-    private Node p;
-    private Node r;
+    private Expr[] p;
+    private NodeList r;
 
-    public Call(String id, Node p, Node r){
+    public Call(String id, Expr[] p, NodeList r){
         this.id = id;
         this.p = p;
         this.r = r;

@@ -10,7 +10,7 @@ public class LangParserAdaptor implements ParseAdaptor {
         try {
             LangScanner input = new LangScanner(new FileReader(path));
             LangParser parser = new LangParser();
-            NodeList result = (NodeList)parser.parse(input);
+            Program result = (Program)parser.parse(input);
 
             return result;
         } catch (Exception e) {
