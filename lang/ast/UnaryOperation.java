@@ -7,7 +7,7 @@ public abstract class UnaryOperation extends Expr {
         this.n = value;
     }
       
-    public void setN(Expr value){ n = value; }
+    public void setN(Expr value){ this.n = value; }
 
-    public Expr getN(){ return n; }
+    public Expr getN(){ return this.n; }
 }

@@ -1,7 +1,10 @@
 package lang.ast;
 
 public class Vector extends Literal {
-    public Vector(){
+    private Node type;
+
+    public Vector(Node type){
         super("VECTOR");
+        this.type = type;
     }
 }

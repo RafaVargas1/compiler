@@ -25,86 +25,61 @@
 %typeof FLOATVAR         =    "Float";
 %typeof CHARACTER        =    "String";
 
-%typeof Prog             =    "NodeList";
-%typeof Def              =    "Node";
+%typeof Prog             =    "Program";
 %typeof Data             =    "Node";
 %typeof Fun              =    "Node";
 %typeof Decl             =    "Param";
 %typeof Type             =    "Node";
 %typeof Cmd              =    "Node";
 %typeof Param            =    "Param";
-%typeof ReturnType       =    "Node";
-%typeof Literal          =    "Node";
 %typeof Expr             =    "Expr";
-%typeof Value            =    "Node";
-
-%typeof DefList          =    "NodeList";
-%typeof DeclList         =    "ParamList";
-%typeof ParamsList       =    "ParamList";
-%typeof ReturnList       =    "Node";
-%typeof ValueList        =    "Node";
-%typeof ExprList         =    "Expr";
-%typeof CmdList          =    "Node";
-%typeof ReturnRecurrency =    "Node";
-%typeof ValueListRecurrency = "Node";
-
-%typeof ParamsOpt        =    "Node";
-%typeof ReturnOpt        =    "Node";
-%typeof ExprListOpt      =    "Node";
-%typeof ValueListOpt     =    "Node";
-%typeof ExprOpt          =    "Expr";
+%typeof Value            =    "Expr";
 %typeof ElseCmd          =    "Node";
+%typeof ArrayDefiner     =    "Expr";
+%typeof Def              =    "Node";
+%typeof Return           =    "NodeList";
+%typeof TypeList         =    "NodeList";
+%typeof CmdList          =    "NodeList";
+%typeof ValueList        =    "NodeList";
+%typeof Values           =    "NodeList";
 
 %goal Prog;
 
-Prog = DefList.l                                                                                              {: return l; :}
+Prog = Def.l+                                                                                                 {: return new Program(l); :}
      ;
 
-DefList = Def.d DefList.l                                                                                     {: return new NodeList(d, l); :}
-        | Def.d                                                                                               {: return new NodeList(d); :}                      
-        ;
-
-Def = Data.d                                                                                                  {: return d; :}
-    | Fun.f                                                                                                   {: return f; :}
+Def = Data.d                                                                                                  {: return d; :}                                                                                                  
+    | Fun.f                                                                                                   {: return f; :}   
     ;
 
 Data = DATA TYPE.i OPENKEYS DeclList.l CLOSEKEYS                                                              {: return new Data(i, l); :} 
      ;
 
-DeclList = Decl.d DeclList.l                                                                                  {: return new ParamList(d, l); :}
-         | Decl.d                                                                                             {: return new ParamList(d); :}                        
+DeclList = DeclList Decl                                                                                  
+         | Decl                                                                                                                 
          ;
 
 Decl = ID.i DOUBLEDOTDOT Type.t SEMI                                                                          {: return new Param(i, t); :} 
      ;
 
-Fun = ID.i OPENPARENTHESIS ParamsOpt.p CLOSEPARENTHESIS ReturnOpt.r Cmd.c                                     {: return new Function(i, p, r, c); :}
+Fun = ID.i OPENPARENTHESIS ParamsList.p? CLOSEPARENTHESIS Return.r? OPENKEYS CmdList.c? CLOSEKEYS             {: return new Function(i, p, r, c); :}
     ;     
 
-ParamsOpt = ParamsList.l                                                                                      {: return l; :}
-          |                                                                                                   {: return new Empty(); :}
-          ;
-
-ParamsList = Param.p                                                                                          {: return new ParamList(p); :}    
-           | Param.p COMMA ParamsList.l                                                                       {: return new ParamList(p, l); :}     
+ParamsList = Param                                                                                          
+           | ParamsList COMMA Param                                                                            
            ;
 
 Param = ID.i DOUBLEDOTDOT Type.t                                                                              {: return new Param(i, t); :}
       ;
 
-ReturnOpt = ReturnType.r                                                                                      {: return r; :}
-          |                                                                                                   {: return new Empty(); :}
-          ;
+Return = DOTDOT TypeList.l                                                                                    {: return l; :}
+       ;
 
-ReturnType = DOTDOT Type.t                                                                                    {: return new NodeList(t); :}
-           | DOTDOT Type.t COMMA ReturnRecurrency.r                                                           {: return new NodeList(t, r); :}
-           ;
+TypeList = Type.t                                                                                             {: return new NodeList(t); :}                                                                      
+         | TypeList.l COMMA Type.t                                                                            {: return new NodeList(t, l); :}                                                           
+         ;
 
-ReturnRecurrency = Type.t                                                                                     {: return new NodeList(t); :}
-                 | Type.t COMMA ReturnRecurrency.r                                                            {: return new NodeList(t, r); :}
-                 ;
-
-Type = Type.t OPENBRACKETS CLOSEBRACKETS                                                                      {: return new Vector(); :}
+Type = Type.t OPENBRACKETS CLOSEBRACKETS                                                                      {: return new Vector(t); :}
      | Literal.l                                                                                              {: return l; :}
      ;
 
@@ -112,42 +87,36 @@ Literal = INT                                                                   
         | CHAR                                                                                                {: return new CharType(); :}
         | BOOL                                                                                                {: return new BoolType(); :}
         | FLOAT                                                                                               {: return new FloatType(); :}
-        | TYPE.i                                                                                              {: return new ID(i); :}
+        | TYPE.i                                                                                              {: return new DataType(i); :}
         ;
 
-Cmd = OPENKEYS CmdList.l CLOSEKEYS                                                                            {: return l; :}
-    | IF OPENPARENTHESIS Expr.e CLOSEPARENTHESIS Cmd.t ElseCmd.f                                              {: return new If(e, t, f); :}
+Cmd = OPENKEYS CmdList.l? CLOSEKEYS                                                                           {: return l; :}
+    | IF OPENPARENTHESIS Expr.e CLOSEPARENTHESIS Cmd.t ElseCmd.f?                                             {: return new If(e, t, f); :}
     | ITERATE OPENPARENTHESIS Expr.e CLOSEPARENTHESIS Cmd.c                                                   {: return new Iterate(e, c); :}
     | READ Value.v SEMI                                                                                       {: return new Read(v); :}
     | PRINT Expr.e SEMI                                                                                       {: return new Print(e); :}
-    | RETURN ReturnList.l SEMI                                                                                {: return l; :}
+    | RETURN ReturnList.l SEMI                                                                                {: return new Return(l); :}
     | Value.v ATRIBUITION Expr.e SEMI                                                                         {: return new Atribuition(v, e); :}
-    | ID.i OPENPARENTHESIS ExprListOpt.l CLOSEPARENTHESIS ValueListOpt.v SEMI                                 {: return new Call(i, l, v); :}
+    | ID.i OPENPARENTHESIS ExprList.l? CLOSEPARENTHESIS ValueList.v? SEMI                                     {: return new Call(i, l, v); :}
     ;
 
 ElseCmd = ELSE Cmd.c                                                                                          {: return c; :}
-        |                                                                                                     {: return new Empty(); :}
         ;
 
-CmdList = Cmd.c CmdList.l                                                                                     {: return new NodeList(c, l); :}
-        |                                                                                                     {: return new Empty(); :}
+CmdList = CmdList.l Cmd.c                                                                                     {: return new NodeList(c, l); :}
+        | Cmd.c                                                                                               {: return new NodeList(c); :}
         ;
 
-ReturnList = Expr.e                                                                                           {: return new Return(e); :}
-           | Expr.e COMMA ReturnList.l                                                                        {: return new Return(e, l); :}
+ReturnList = Expr                                                                                           
+           | ReturnList COMMA Expr                                                                        
            ;
 
-ValueListOpt = ValueList.l                                                                                    {: return l; :}
-             |                                                                                                {: return new Empty(); :}
-             ;
-
-ValueList = SMALLER Value.v GREATER                                                                           {: return new NodeList(v); :}
-          | SMALLER Value.v COMMA ValueListRecurrency.l GREATER                                               {: return new NodeList(v, l); :}
+ValueList = SMALLER Values.v GREATER                                                                          {: return v; :}                                                                       
           ;
 
-ValueListRecurrency = Value.v                                                                                 {: return new NodeList(v); :}
-                    | Value.v COMMA ValueListRecurrency.l                                                     {: return new NodeList(v, l); :}
-                    ;
+Values = Value.v                                                                                              {: return new NodeList(v); :}                                                                        
+       | Values.l COMMA Value.v                                                                               {: return new NodeList(v, l); :}                                       
+       ;
           
 Expr = Expr.e1 AND Expr.e2                                                                                    {: return new And(e1, e2); :}
      | Expr.e1 SMALLER Expr.e2                                                                                {: return new Smaller(e1, e2); :}
@@ -158,7 +127,7 @@ Expr = Expr.e1 AND Expr.e2                                                      
      | Expr.e1 MINUS Expr.e2                                                                                  {: return new Subtraction(e1, e2); :}
      | Expr.e1 MULTI Expr.e2                                                                                  {: return new Multiplication(e1, e2); :}
      | Expr.e1 DIVIDE Expr.e2                                                                                 {: return new Division(e1, e2); :}
-     | Expr.e1 INTDIVIDE Expr.e2                                                                              {: return new IntDivision(e1, e2); :}
+     | Expr.e1 INTDIVIDE Expr.e2                                                                              {: return new Mod(e1, e2); :}
      | NEGATION Expr.e                                                                                        {: return new Not(e); :}
      | MINUS Expr.e @ UNARY_MINUS                                                                             {: return new Negative(e); :}
      | TRUE                                                                                                   {: return new True(); :}
@@ -169,20 +138,15 @@ Expr = Expr.e1 AND Expr.e2                                                      
      | CHARACTER.c                                                                                            {: return new CharacterVar(c); :}
      | Value.v                                                                                                {: return v; :}
      | OPENPARENTHESIS Expr.e CLOSEPARENTHESIS                                                                {: return e; :}
-     | NEW Type.t ExprOpt.e                                                                                   {: return new Instance(t, e); :}
-     | ID.i OPENPARENTHESIS ExprListOpt.l CLOSEPARENTHESIS OPENBRACKETS Expr.e CLOSEBRACKETS                  {: return new IndexedCall(i, l, e); :}
+     | NEW Type.t ArrayDefiner.e?                                                                             {: return new Instance(t, e); :}
+     | ID.i OPENPARENTHESIS ExprList.l? CLOSEPARENTHESIS OPENBRACKETS Expr.e CLOSEBRACKETS                    {: return new IndexedCall(i, l, e); :}
      ;
 
-ExprOpt = OPENBRACKETS Expr.e CLOSEBRACKETS                                                                   {: return e; :}
-        |                                                                                                     {: return new Empty(); :}
-        ;
+ArrayDefiner = OPENBRACKETS Expr.e CLOSEBRACKETS                                                              {: return e; :}
+             ;
 
-ExprListOpt = ExprList.l                                                                                      {: return l; :}
-            |                                                                                                 {: return new Empty(); :}
-            ;
-
-ExprList = Expr.e                                                                                             {: return new ExprList(e); :}
-         | Expr.e COMMA ExprList.l                                                                            {: return new ExprList(e, l); :}
+ExprList = Expr                                                                                             
+         | ExprList COMMA Expr                                                                            
          ;
          
 Value = ID.i                                                                                                  {: return new ID(i); :}

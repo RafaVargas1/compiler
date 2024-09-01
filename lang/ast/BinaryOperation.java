@@ -9,9 +9,9 @@ public abstract class BinaryOperation extends Expr {
         this.b = b;
     }
       
-    public void setA(Expr n){ a = n; }
-    public void setB(Expr n){ b = n; }
+    public void setA(Expr n){ this.a = n; }
+    public void setB(Expr n){ this.b = n; }
 
-    public Expr getA(){ return a; }
-    public Expr getB(){ return b; }
+    public Expr getA(){ return this.a; }
+    public Expr getB(){ return this.b; }
 }
