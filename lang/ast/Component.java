@@ -8,4 +8,8 @@ public class Component extends Expr {
         this.id = id;
         this.parent = parent;
     }
+
+    public String getId() { return this.id; };
+
+    public Node getParent(){ return this.parent; };
 }

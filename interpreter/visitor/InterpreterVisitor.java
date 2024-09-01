@@ -198,7 +198,7 @@ public class InterpreterVisitor extends Visitor {
     }
 
 
-    public  void visit(Not e){
+    public void visit(Not e){
         try{   
             e.getN().accept(this);
             operands.push (new Boolean( ! (Boolean)operands.pop() ) );
@@ -206,6 +206,16 @@ public class InterpreterVisitor extends Visitor {
             throw new RuntimeException( " (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage() );
         }
     }
+
+    public void visit(UnaryOperation e){
+        try{   
+            e.getN().accept(this);
+            operands.push (new Boolean( (Boolean)operands.pop() ) );
+        }catch(Exception x){
+            throw new RuntimeException( " (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage() );
+        }
+    }
+
 
     public  void visit(True e){ 
         try{
@@ -291,25 +301,25 @@ public class InterpreterVisitor extends Visitor {
 
     // Comandos 
 
-    public  void visit(Atribuition e){
-        try{   
-            Var v = e.getId();
-            e.getExpr().accept(this);
+    public void visit(Atribuition e) {
+        try {
+            Node v = e.getId();
+            ArrayList<Node> arr = (ArrayList<Node>) env.peek().get(v); 
             Object val = operands.pop();
-            
-            if(v.getIdx() != null && v.getIdx().length > 0 ){
-                ArrayList arr = (ArrayList)env.peek().get(v.getName());
-                for(int k = 0; k < v.getIdx().length-1; k++ ){
-                v.getIdx()[k].accept(this);
-                arr = (ArrayList)arr.get( (Integer)operands.pop());
+
+            if (arr.size() > 0) {
+                for (Node n : arr) { 
+                    n.accept(this);
+                    arr = (ArrayList<Node>) arr.get((Integer) operands.pop()); 
                 }
-                v.getIdx()[v.getIdx().length-1 ].accept(this);
-                arr.set( (Integer)operands.pop(), val);
+                arr.set((Integer) operands.pop(), (Node) val); 
+
+            } else {
+                env.peek().put(e.getExpr().getName(), val);
             }
-            else{ env.peek().put(e.getExpr().getName(), val);}
-            
-        }catch(Exception x){
-            throw new RuntimeException( " (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage() );
+
+        } catch (Exception x) {
+            throw new RuntimeException("(" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
@@ -458,10 +468,7 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void vist(Data e){
-
-        e.accept(this);
-        
-
+        e.accept(this);       
 
         if(debug && e.getId().equals("main") ){            
             Object[] x = env.peek().keySet().toArray(); 
@@ -474,5 +481,23 @@ public class InterpreterVisitor extends Visitor {
         env.pop();
         retMode= false;     
     }
+
+    public void visit(Component e){
+
+    }
+
+    public void visit(Data e){
+
+    }
+
+    public void visit(ExprList e){
+
+    }
+
+    public void visit(IndexedCall e){
+
+    }
+
+  
 
 }
