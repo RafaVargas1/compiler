@@ -12,5 +12,11 @@ public class Call extends Node {
     }
 
     public String getName(){ return id; }
-    public Node[] getArgs(){ return ([p, r]);}
+    public Node[] getArgs(){ 
+        if (r == null){
+            return new Node[]{p};
+        } else {
+            return new Node[]{p, r};
+        }
+    }
 }

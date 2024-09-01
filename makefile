@@ -14,12 +14,11 @@ parser:
 build:
 	javac -d build -cp .:./lang/tools/beaver-rt-0.9.11.jar lang/*.java
 	
-
-i: 
-	java -jar ./lang/tools/jflex-full-1.8.2.jar ./lang/lexer/lang.flex 
-	javac -cp ./build:./lang/tools/beaver-rt-0.9.11.jar ./lang/lexer/LangScanner.java
-	javac -d build -cp .:./lang/tools/beaver-rt-0.9.11.jar:src/main src/main/Main.java
-	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar Main
-
 clear:
 	rm -R lang/parser/LangParser.java lang/parser/Terminals.java lang/lexer/LangScanner.java lang/lexer/LangScanner.java~ build/
+
+i: 
+	javac -cp .:./build:./lang/tools/beaver-rt-0.9.11.jar -d build src/main/LangParserAdaptor.java
+	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar LangParserAdaptor testes/semantica/certo/teste4.lan
+
+

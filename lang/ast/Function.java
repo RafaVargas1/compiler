@@ -2,11 +2,11 @@ package lang.ast;
 
 public class Function extends Node {
     private String id;
-    private Node[] params;
+    private Param[] params;
     private Node returnType;
     private Node body;
 
-    public Function(String id, Node[] params, Node returnType, Node body){
+    public Function(String id, Param[] params, Node returnType, Node body){
         this.id = id;
         this.params = params;
         this.returnType = returnType;
@@ -15,6 +15,7 @@ public class Function extends Node {
 
     public String getID(){ return id;};
     public Node getTipo(){   return returnType; };
-    public Node[] getParams(){   return params; }
+    public Param[] getParams(){   return params; };
     public Node getBody(){ return body;}
+
 }

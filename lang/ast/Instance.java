@@ -8,4 +8,7 @@ public class Instance extends Expr {
         this.type = type;
         this.e = e;
     }
+
+    public Node getId(){ return type; };
+    public Expr getSize(){ return e; }
 }

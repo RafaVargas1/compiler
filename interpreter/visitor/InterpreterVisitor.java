@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
 
-import ast.StmtList;
 import lang.ast.*;
 public class InterpreterVisitor extends Visitor {
 
     private Stack<HashMap<String,Object>> env;     
     private HashMap<String,Function> funcs;     
     private Stack<Object> operands;
+    private HashMap<String, Object> datas;
     private boolean retMode, debug;
 
     public InterpreterVisitor() {
@@ -18,6 +18,8 @@ public class InterpreterVisitor extends Visitor {
         env.push(new HashMap<String,Object>());
         funcs = new  HashMap<String,Function>();
         operands = new Stack<Object>();
+        datas = new HashMap<String, Object>();
+
         retMode = false;
         debug = false; 
     }
@@ -28,20 +30,35 @@ public class InterpreterVisitor extends Visitor {
     }
 
     // Verificar qual seria o Tipo equivalente a Program
-    public void visit( p) {
+    public void visit(SuperNode e) {
         Node main = null;
-         for(Function f : p.getFuncs()){
-             funcs.put(f.getID(),f);
-             if(f.getID().equals("main")){
-                 main = f;
-             }
-         }
-         if(main == null){
+        for(Function f : p.getFuncs()){
+            funcs.put(f.getID(),f);
+            if(f.getID().equals("main")){
+                main = f;
+            }
+        }
+        if(main == null){
             throw new RuntimeException( "Não há uma função chamada inicio ! abortando ! ");
-         }
+        }
 
-         main.accept(this);
+        main.accept(this);
     }
+
+    // public void visit( p) {
+    //     Node main = null;
+    //      for(Function f : p.getFuncs()){
+    //          funcs.put(f.getID(),f);
+    //          if(f.getID().equals("main")){
+    //              main = f;
+    //          }
+    //      }
+    //      if(main == null){
+    //         throw new RuntimeException( "Não há uma função chamada inicio ! abortando ! ");
+    //      }
+
+    //      main.accept(this);
+    // }
 
     // Operadores Matemáticos
     public void visit(Addition e){
@@ -109,27 +126,12 @@ public class InterpreterVisitor extends Visitor {
         }
     }
 
-    public  void visit(IntDivision e){
-        try{ 
-            e.getA().accept(this);
-            e.getB().accept(this);
-            Number esq,dir;
-            dir = (Number)operands.pop();
-            esq = (Number)operands.pop();
-            operands.push( new Integer(esq.intValue() /  dir.intValue() ) ); 
-        }catch(Exception x){
-            throw new RuntimeException( " (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage() );
-        }
-    }
-
     public  void visit(Negative e){
         try{ 
-            e.getA().accept(this);
-            e.getB().accept(this);
-            Number esq,dir;
-            dir = (Number)operands.pop();
-            esq = (Number)operands.pop();
-            operands.push( new Integer(esq.intValue() /  dir.intValue() ) ); 
+            e.getN().accept(this);
+            // Redefinir o valor para negativo mas para expressao
+            // operands.pop();
+            // operands.push( new Integer(e.getN() * -1) ); 
         }catch(Exception x){
             throw new RuntimeException( " (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage() );
         }
@@ -221,13 +223,13 @@ public class InterpreterVisitor extends Visitor {
         }
     }
 
-    public  void visit(Array e){
-        try{
-            operands.push(  new Array(e));
-        }catch(Exception x){
-            throw new RuntimeException( " (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage() );
-        }
-    }
+    // public  void visit(Array e){
+    //     try{
+    //         operands.push(  new Array(e));
+    //     }catch(Exception x){
+    //         throw new RuntimeException( " (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage() );
+    //     }
+    // }
 
     public  void visit(Null e){
         try{
@@ -273,8 +275,8 @@ public class InterpreterVisitor extends Visitor {
         try{
             Function f = funcs.get(e.getName());
             if(f != null){
-                for(Expr exp : e.getArgs()){
-                exp.accept(this);
+                for(Node node : e.getArgs()){
+                node.accept(this);
             }
 
             f.accept(this);
@@ -347,40 +349,59 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public  void visit(NodeList e){
-        if(retMode){ return; }
         
+        try{            
+            if ( e.getCmd1() instanceof Data ) {
+                datas.put(e.getCmd1().getID(), e.getCmd1().getParams());
+            } else if ( e.getCmd1() instanceof Function ) {
+                funcs.put( e.getCmd1().getID(), e.getCmd1().getBody());
+            }
+
+            if ( e.getCmd2() instanceof Data ) {
+                datas.put(e.getCmd2().getID(), e.getCmd2().getParams());
+            } else if ( e.getCmd2() instanceof Function ) {
+                funcs.put( e.getCmd2().getID(), e.getCmd2().getBody());
+            } else if ( e.getCmd2() instanceof NodeList ) {
+                this.visit(e.getCmd2());
+            }
+        }catch(Exception x){
+            throw new RuntimeException( " (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage() );
+        }  
+    }
+
+    public  void visit(Node e){
+               
         try{
-            e.getCmd1().accept(this);
-            if(retMode){ return; }
-            e.getCmd2().accept(this);
+            e.accept(this);
+           
         }catch(Exception x){
             throw new RuntimeException( " (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage() );
         }  
     }
 
     public void visit(Function f){
-         HashMap<String,Object> localEnv = new HashMap<String,Object>();
+        HashMap<String,Object> localEnv = new HashMap<String,Object>();
          for(int  i = f.getParams().length-1; i >= 0; i--){
-             localEnv.put(f.getParams()[i].getID(),operands.pop());
+            localEnv.put(f.getParams()[i].getParamId(),operands.pop());
          } 
-         env.push(localEnv);
-         f.getBody().accept(this);
-         if(debug && f.getID().equals("main") ){
-             
-             Object[] x = env.peek().keySet().toArray(); 
-             System.out.println("-------------- Memoria ----------------");
-             for(int i =0; i < x.length; i++){
-                 System.out.println( ((String)x[i]) + " : " +  env.peek().get(x[i]).toString() );
-             }
-         }
-         env.pop();
-         retMode= false;
-         
+
+        env.push(localEnv);
+        f.getBody().accept(this);
+        if(debug && f.getID().equals("main") ){
+            
+            Object[] x = env.peek().keySet().toArray(); 
+            System.out.println("-------------- Memoria ----------------");
+            for(int i =0; i < x.length; i++){
+                System.out.println( ((String)x[i]) + " : " +  env.peek().get(x[i]).toString() );
+            }
+        }
+        env.pop();
+        retMode= false;      
     }
 
-    public  void visit(Instance e){
+    public void visit(Instance e){
         try{   
-            Var v = e.getID();
+            ID v = e.getId();
             e.getSize().accept(this);
             Integer size = (Integer)operands.pop();
             ArrayList val = new ArrayList(size);
@@ -403,7 +424,7 @@ public class InterpreterVisitor extends Visitor {
             }
         
         }catch(Exception x){
-            throw new RuntimeException( " (" + e.getLine() + ", " + e.getCol() + ") " + x.getMessage() );
+            throw new RuntimeException( " (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage() );
         }
     }
 
@@ -414,6 +435,8 @@ public class InterpreterVisitor extends Visitor {
      
     public  void visit(Param e){ }
      
+    public  void visit(ParamList e){ }
+
     public void visit(BoolType e ){ 
         // e.getType().accept(this);
     }
@@ -424,12 +447,32 @@ public class InterpreterVisitor extends Visitor {
 
     public void visit(FloatType e ){
         // e.getType().accept(this);
-     
-
     }
 
     public void visit(IntType e ){ 
        // e.getType().accept(this);
+    }
+
+    public void visit(Literal e ){ 
+       // e.getType().accept(this);
+    }
+
+    public void vist(Data e){
+
+        e.accept(this);
+        
+
+
+        if(debug && e.getId().equals("main") ){            
+            Object[] x = env.peek().keySet().toArray(); 
+            System.out.println("-------------- Memoria ----------------");
+            for(int i =0; i < x.length; i++){
+                System.out.println( ((String)x[i]) + " : " +  env.peek().get(x[i]).toString() );
+            }
+        }
+
+        env.pop();
+        retMode= false;     
     }
 
 }

@@ -2,10 +2,14 @@ package lang.ast;
 
 public class Data extends Node {
     private String id;
-    private Node decl;
+    private Param[] decl;
 
-    public Data(String id, Node decl){
+    public Data(String id, Param[] decl){
         this.id = id;
         this.decl = decl;
     }
+
+    public String getId() { return this.id; };
+
+    public Param[] getParams(){ return this.decl; }
 }

@@ -8,4 +8,8 @@ public class Param extends Node {
         this.id = id;
         this.t = t;
     }
+
+    public String getParamId() { return this.id; };
+
+    public Node getParamType() { return this.t; };
 }
