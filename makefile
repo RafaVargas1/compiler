@@ -1,16 +1,18 @@
-compile: genparser genlex
-	javac -cp .:beaver-rt-0.9.11.jar Teste.java
+.PHONY: build
 
-genparser: parsers/lang.grammar
-	java -jar beaver-cc-0.9.11.jar -T parsers/lang.grammar
+compile: parser lexer build
 
-genlex: parsers/lang.flex genparser
-	java -jar jflex-full-1.8.2.jar parsers/lang.jflex
+run:
+	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar lang.LangCompiler -bs 
 
-run: compile
-	java -cp .:beaver-rt-0.9.11.jar Teste $(filter-out $@,$(MAKECMDGOALS))
+lexer:
+	java -jar ./lang/tools/jflex-full-1.8.2.jar ./lang/lexer/lang.flex 
+	
+parser:
+	java -jar ./lang/tools/beaver-cc-0.9.11.jar -T ./lang/parser/lang.grammar
 
-clean:
-	rm -R parsers/MiniLang*.java parsers/Terminals.java
-	find . -type f -name "*.class" -delete
-	find . -type f -name "*~" -delete
+build:
+	javac -d build -cp .:./lang/tools/beaver-rt-0.9.11.jar lang/*.java
+
+clear:
+	rm -R lang/parser/LangParser.java lang/parser/Terminals.java lang/lexer/LangScanner.java lang/lexer/LangScanner.java~ build/

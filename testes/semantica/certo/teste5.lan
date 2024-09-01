@@ -18,6 +18,8 @@ main(){
       p[i] = new Ponto;
       p[i].x = 12+i;
       p[i].y = 12-i;
+      print p[i].y;
+      print '\n';
       i = i + 1;
    }
    print '\n';
