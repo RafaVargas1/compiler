@@ -13,4 +13,7 @@ public class NodeList extends Node {
         this.n = n;
         this.l = null;
     }
+
+    public Node getCmd1(){ return n;} 
+    public Node getCmd2(){ return l; }
 }

@@ -1,5 +1,6 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
 public abstract class BinaryOperation extends Expr {  
     private Expr a;
     private Expr b;

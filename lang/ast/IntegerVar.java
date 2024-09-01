@@ -6,4 +6,6 @@ public class IntegerVar extends Expr {
     public IntegerVar(Integer n){
         this.n = n;
     }
+
+    public Integer getValue(){ return n;}
 }

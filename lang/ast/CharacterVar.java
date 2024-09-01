@@ -6,4 +6,7 @@ public class CharacterVar extends Expr {
     public CharacterVar(String c){
         this.c = c;
     }
+
+    public String getValue(){ return c;}
+
 }

@@ -13,4 +13,7 @@ public class Return extends Node {
         this.e = e;
         this.n = null;
     }
+
+    public Expr getExpr(){ return e;}
+
 }

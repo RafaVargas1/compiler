@@ -6,4 +6,7 @@ public class Print extends Node {
     public Print(Expr e){
          this.e = e;
     }    
+    
+    public Expr getExpr(){ return e;}
+
 }

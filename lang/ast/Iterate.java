@@ -8,4 +8,7 @@ public class Iterate extends Node {
          this.t = t;
          this.c = c;
     }    
+
+    public Expr getTeste(){ return t;}
+    public Node getBody(){ return c;}
 }

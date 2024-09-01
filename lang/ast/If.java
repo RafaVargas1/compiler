@@ -16,4 +16,8 @@ public class If extends Node {
          this.t = t;
          this.e = null;
     }
+
+     public Expr getTeste(){ return c;}
+     public Node getThen(){ return t;}
+     public Node getElse(){ return e;}
 }

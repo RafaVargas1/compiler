@@ -6,4 +6,7 @@ public class FloatVar extends Expr {
     public FloatVar(Float n){
         this.n = n;
     }
+
+    public Float getValue(){ return n;}
+
 }

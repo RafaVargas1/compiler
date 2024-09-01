@@ -10,4 +10,7 @@ public class Call extends Node {
         this.p = p;
         this.r = r;
     }
+
+    public String getName(){ return id; }
+    public Node[] getArgs(){ return ([p, r]);}
 }
