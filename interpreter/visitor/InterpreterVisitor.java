@@ -45,20 +45,20 @@ public class InterpreterVisitor extends Visitor {
         main.accept(this);
     }
 
-    // public void visit( p) {
-    //     Node main = null;
-    //      for(Function f : p.getFuncs()){
-    //          funcs.put(f.getID(),f);
-    //          if(f.getID().equals("main")){
-    //              main = f;
-    //          }
-    //      }
-    //      if(main == null){
-    //         throw new RuntimeException( "Não há uma função chamada inicio ! abortando ! ");
-    //      }
+    public void visit(Program p) {
+        Node main = null;
+         for(Function f : p.getFuncs()){
+             funcs.put(f.getID(),f);
+             if(f.getID().equals("main")){
+                 main = f;
+             }
+         }
+         if(main == null){
+            throw new RuntimeException( "Não há uma função chamada inicio ! abortando ! ");
+         }
 
-    //      main.accept(this);
-    // }
+         main.accept(this);
+    }
 
     // Operadores Matemáticos
     public void visit(Addition e){
@@ -445,8 +445,6 @@ public class InterpreterVisitor extends Visitor {
      
     public  void visit(Param e){ }
      
-    public  void visit(ParamList e){ }
-
     public void visit(BoolType e ){ 
         // e.getType().accept(this);
     }
@@ -487,10 +485,6 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(Data e){
-
-    }
-
-    public void visit(ExprList e){
 
     }
 
