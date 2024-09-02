@@ -7,14 +7,10 @@ Arthur Vieira da Silva    - 202035013
 Rafael de Oliveira Vargas - 202035022
 ```
 
-Para compilar o projeto é preciso primeiro gerar o arquivo do scanner usando o jflex:
+Para compilar o projeto:
 
-```jflex ./src/main/scanner/lang.flex```
+```make compile```
 
-Em seguida compilar o projeto:
+Para rodar o projeto:
 
-```javac -d src/build src/main/token/*.java src/main/scanner/*.java src/main/*.java```
-
-Finalmente, para executar o programa basta chamar a função principal passando um arquivo de entrada, como no exemplo abaixo:
-
-```java -cp src/build Main testes/lexico/testFile1.txt```
+```make run```
