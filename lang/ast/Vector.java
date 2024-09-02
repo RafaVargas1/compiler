@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class Vector extends Literal {
     private Node type;
 
@@ -7,4 +9,6 @@ public class Vector extends Literal {
         super("VECTOR");
         this.type = type;
     }
+
+    public void accept(Visitor v){ v.visit(this);}
 }

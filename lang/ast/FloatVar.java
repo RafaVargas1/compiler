@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class FloatVar extends Expr {
     private Float n;
 
@@ -9,4 +11,5 @@ public class FloatVar extends Expr {
 
     public Float getValue(){ return n;}
 
+    public void accept(Visitor v){ v.visit(this);}
 }

@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class Iterate extends Node {
     private Expr t;
     private Node c;
@@ -11,4 +13,6 @@ public class Iterate extends Node {
 
     public Expr getTeste(){ return t;}
     public Node getBody(){ return c;}
+
+    public void accept(Visitor v){ v.visit(this);}
 }

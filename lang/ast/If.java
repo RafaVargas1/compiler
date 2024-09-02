@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class If extends Node {
     private Expr c;
     private Node t;
@@ -20,4 +22,6 @@ public class If extends Node {
      public Expr getTeste(){ return c;}
      public Node getThen(){ return t;}
      public Node getElse(){ return e;}
+
+     public void accept(Visitor v){ v.visit(this);}
 }

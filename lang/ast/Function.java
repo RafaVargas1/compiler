@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class Function extends Node {
     private String id;
     private Param[] params;
@@ -17,5 +19,7 @@ public class Function extends Node {
     public Node getTipo(){   return returnType; };
     public Param[] getParams(){   return params; };
     public Node getBody(){ return body;}
+
+    public void accept(Visitor v){ v.visit(this);}
 
 }

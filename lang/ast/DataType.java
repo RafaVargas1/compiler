@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class DataType extends Literal {
     private String id;
 
@@ -7,4 +9,6 @@ public class DataType extends Literal {
         super("DATA");
         this.id = id;
     }
+
+    
 }

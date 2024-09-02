@@ -15,4 +15,6 @@ public abstract class BinaryOperation extends Expr {
 
     public Expr getA(){ return this.a; }
     public Expr getB(){ return this.b; }
+
+    public void accept(Visitor v){ v.visit(this);}
 }

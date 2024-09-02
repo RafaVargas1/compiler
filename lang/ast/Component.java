@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class Component extends Expr {
     private String id;
     private Node parent;
@@ -12,4 +14,6 @@ public class Component extends Expr {
     public String getId() { return this.id; };
 
     public Node getParent(){ return this.parent; };
+
+    public void accept(Visitor v){ v.visit(this);}
 }

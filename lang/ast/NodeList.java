@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class NodeList extends Node {
     private Node n;
     private Node l;
@@ -16,4 +18,6 @@ public class NodeList extends Node {
 
     public Node getCmd1(){ return n;} 
     public Node getCmd2(){ return l; }
+
+    public void accept(Visitor v){ v.visit(this);}
 }

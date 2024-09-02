@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class CharacterVar extends Expr {
     private String c;
 
@@ -8,5 +10,7 @@ public class CharacterVar extends Expr {
     }
 
     public String getValue(){ return c;}
+
+    public void accept(Visitor v){ v.visit(this);}
 
 }

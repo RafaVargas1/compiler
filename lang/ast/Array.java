@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class Array extends Expr {
     private Node id;
     private Expr index;
@@ -8,4 +10,6 @@ public class Array extends Expr {
         this.id = id;
         this.index = index;
     }
+
+    public void accept(Visitor v){ v.visit(this);}
 }

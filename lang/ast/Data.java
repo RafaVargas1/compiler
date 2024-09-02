@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class Data extends Node {
     private String id;
     private Param[] decl;
@@ -12,4 +14,6 @@ public class Data extends Node {
     public String getId() { return this.id; };
 
     public Param[] getParams(){ return this.decl; }
+
+    public void accept(Visitor v){ v.visit(this);}
 }

@@ -1,7 +1,11 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class Not extends UnaryOperation {  
     public Not(Expr n){
         super(n);
     }
+
+    public void accept(Visitor v){ v.visit(this);}
 }

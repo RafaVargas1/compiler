@@ -1,5 +1,7 @@
 package lang.ast;
 
+import interpreter.visitor.Visitor;
+
 public class Call extends Node {
     private String id;
     private Expr[] p;
@@ -19,4 +21,6 @@ public class Call extends Node {
             return new Node[]{p, r};
         }
     }
+
+    public void accept(Visitor v){ v.visit(this);}
 }
