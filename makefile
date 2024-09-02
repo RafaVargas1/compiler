@@ -18,7 +18,7 @@ clear:
 	rm -R lang/parser/LangParser.java lang/parser/Terminals.java lang/lexer/LangScanner.java lang/lexer/LangScanner.java~ build/
 
 i: 
-	javac -cp .:./build:./lang/tools/beaver-rt-0.9.11.jar -d build src/main/LangParserAdaptor.java
+	javac -cp .:./build:./lang/tools/beaver-rt-0.9.11.jar -d build lang/parser/LangParserAdaptor.java
 	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar LangParserAdaptor testes/semantica/certo/teste4.lan
 
 

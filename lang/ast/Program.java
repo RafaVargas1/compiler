@@ -12,5 +12,7 @@ public class Program extends Node {
         this.prog = prog;
     }
 
+    public Node[] getContent() { return this.prog; }
+
     public void accept(Visitor v){ v.visit(this);}
 }

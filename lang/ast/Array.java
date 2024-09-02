@@ -14,5 +14,13 @@ public class Array extends Expr {
         this.index = index;
     }
 
+    public Node getName() {
+        return this.id;
+    }
+    
+    public Expr getIndex() {
+        return this.index;
+    }
+
     public void accept(Visitor v){ v.visit(this);}
 }

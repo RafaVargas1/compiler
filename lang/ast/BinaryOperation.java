@@ -3,7 +3,6 @@
 
 package lang.ast;
 
-import interpreter.visitor.Visitor;
 public abstract class BinaryOperation extends Expr {  
     private Expr a;
     private Expr b;
@@ -18,6 +17,4 @@ public abstract class BinaryOperation extends Expr {
 
     public Expr getA(){ return this.a; }
     public Expr getB(){ return this.b; }
-
-    public void accept(Visitor v){ v.visit(this);}
 }

@@ -18,7 +18,7 @@ public class Function extends Node {
         this.body = body;
     }
 
-    public String getID(){ return id;};
+    public String getName(){ return id;};
     public Node getTipo(){   return returnType; };
     public Param[] getParams(){   return params; };
     public Node getBody(){ return body;}

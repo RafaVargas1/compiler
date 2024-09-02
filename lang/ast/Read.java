@@ -12,5 +12,9 @@ public class Read extends Node {
          this.id = id;
     }    
 
+    public Node getName() {
+        return this.id;
+    }
+
     public void accept(Visitor v){ v.visit(this);}
 }

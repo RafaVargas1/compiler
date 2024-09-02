@@ -14,7 +14,7 @@ public class Component extends Expr {
         this.parent = parent;
     }
 
-    public String getId() { return this.id; };
+    public String getName() { return this.id; };
 
     public Node getParent(){ return this.parent; };
 

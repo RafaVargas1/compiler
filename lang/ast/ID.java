@@ -12,5 +12,9 @@ public class ID extends Expr {
         this.i = i;
     }
 
+    public String getName() {
+        return this.i;
+    }
+
     public void accept(Visitor v){ v.visit(this);}
 }

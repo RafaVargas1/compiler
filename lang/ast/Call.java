@@ -17,12 +17,8 @@ public class Call extends Node {
     }
 
     public String getName(){ return id; }
-    public Node[] getArgs(){ 
-        if (r == null){
-            return new Node[]{p};
-        } else {
-            return new Node[]{p, r};
-        }
+    public Expr[] getArgs(){ 
+        return this.p;
     }
 
     public void accept(Visitor v){ v.visit(this);}

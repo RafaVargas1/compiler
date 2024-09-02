@@ -14,7 +14,7 @@ public class Atribuition extends Node {
         this.e = e;
     }
 
-    public Node getId() { return id; }
+    public Node getName() { return id; }
     public Expr getExpr() { return e; }
 
     public void accept(Visitor v){ v.visit(this);}
