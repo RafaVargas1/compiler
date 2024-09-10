@@ -2,8 +2,7 @@
 //Rafael de Oliveira Vargas - 202035022
 
 package lang.ast;
-
-import lang.visitor.*;Visitable;
+import lang.visitor.*;
 public abstract class Node extends beaver.Symbol implements SuperNode, Visitable {  
     public Node(){}
     

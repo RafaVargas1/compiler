@@ -12,10 +12,7 @@ import java.io.IOException;
 import lang.ast.*;
 
 import beaver.Symbol;
-import lang.visitor.*;Interpreter
 import lang.visitor.*;
-
-
 public class LangParserAdaptor implements ParseAdaptor {
 
     public SuperNode parseFile(String path) {

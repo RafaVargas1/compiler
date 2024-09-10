@@ -1,4 +1,4 @@
-package interpreter.
+package lang.visitor;
 
 public interface Visitable {
 

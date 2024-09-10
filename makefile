@@ -1,5 +1,7 @@
 .PHONY: build
 
+r: clear compile run
+
 compile: parser lexer build
 
 run:
