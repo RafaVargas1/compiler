@@ -3,7 +3,7 @@
 
 package lang.ast;
 
-import interpreter.visitor.Visitable;
+import lang.visitor.*;Visitable;
 public abstract class Node extends beaver.Symbol implements SuperNode, Visitable {  
     public Node(){}
     

@@ -3,7 +3,7 @@
 
 package lang.ast;
 
-import interpreter.visitor.Visitor;
+import lang.visitor.*;
 
 public class Subtraction extends BinaryOperation {  
     public Subtraction(Expr a, Expr b){

@@ -3,7 +3,7 @@
 
 package lang.ast;
 
-import interpreter.visitor.Visitor;
+import lang.visitor.*;
 
 public class Smaller extends BinaryOperation {  
     public Smaller(Expr a, Expr b){

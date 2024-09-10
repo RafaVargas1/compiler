@@ -3,7 +3,7 @@
 
 package lang.ast;
 
-import interpreter.visitor.Visitor;
+import lang.visitor.*;
 
 public class And extends BinaryOperation {  
     public And(Expr a, Expr b){

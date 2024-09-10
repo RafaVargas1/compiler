@@ -3,7 +3,7 @@
 
 package lang.ast;
 
-import interpreter.visitor.Visitor;
+import lang.visitor.*;
 
 public class Multiplication extends BinaryOperation {  
     public Multiplication(Expr a, Expr b){

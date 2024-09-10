@@ -12,8 +12,8 @@ import java.io.IOException;
 import lang.ast.*;
 
 import beaver.Symbol;
-import interpreter.visitor.InterpreterVisitor;
-import interpreter.visitor.Visitor;
+import lang.visitor.*;Interpreter
+import lang.visitor.*;
 
 
 public class LangParserAdaptor implements ParseAdaptor {

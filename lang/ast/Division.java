@@ -3,7 +3,7 @@
 
 package lang.ast;
 
-import interpreter.visitor.Visitor;
+import lang.visitor.*;
 
 public class Division extends BinaryOperation {  
     public Division(Expr a, Expr b){

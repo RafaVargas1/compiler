@@ -3,7 +3,7 @@
 
 package lang.ast;
 
-import interpreter.visitor.Visitor;
+import lang.visitor.*;
 
 public class Different extends BinaryOperation {  
     public Different(Expr a, Expr b){
