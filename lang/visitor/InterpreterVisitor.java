@@ -42,18 +42,29 @@ public class InterpreterVisitor extends Visitor {
     public void visit(Program p) {
         
         try {
+            Node main = null;
             for (Node n : p.getContent()) {
                 if (n instanceof Data) {
                     System.out.println("Data");
                     n.accept(this);
                 }
                 if (n instanceof Function) {
-                    System.out.println("Start Derivation");
-                    n.accept(this);
-                    System.out.println("Aceito");
-                    //funcs.put(n.getName(), n);
+                    Function function = (Function) n;
+                    funcs.put(function.getName(), function);
+
+                    if (function.getName().equals("main")){
+                        main = function;
+                    }
+
                 }
             }
+
+                                
+            if(main == null){
+                throw new RuntimeException( "Defina uma função main");
+            }
+
+            main.accept(this);
         } catch (Exception x) {
             // x.printStackTrace();
             throw new RuntimeException(x);
@@ -298,6 +309,7 @@ public class InterpreterVisitor extends Visitor {
 
     // Comandos
     public void visit(Call e) {
+        System.out.println("Called " + e.getName());
         try {
             Function f = funcs.get(e.getName());
             if (f != null) {
@@ -412,14 +424,14 @@ public class InterpreterVisitor extends Visitor {
             
             if ( e.getCmd2() != null)
                 e.getCmd2().accept(this);
-                
+
         } catch (Exception x) {
-            x.printStackTrace();
             throw new RuntimeException("Erro no node list -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
     public void visit(Function f) {
+        System.out.println("Start F() - " + f.getName());
         HashMap<String, Object> localEnv = new HashMap<String, Object>();
         for (int i = f.getParams().length - 1; i >= 0; i--) {
             localEnv.put(f.getParams()[i].getParamId(), operands.pop());
@@ -429,6 +441,8 @@ public class InterpreterVisitor extends Visitor {
         f.getBody().accept(this);
         env.pop();
         retMode = false;
+        System.out.println("End F() - " + f.getName());
+
     }
 
     public void visit(Instance e) {

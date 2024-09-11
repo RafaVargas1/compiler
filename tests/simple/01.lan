@@ -1,7 +1,15 @@
+aux(){
+   print 10;
+   print i;
+   i = 150;
+   print i;
+}
+
 main(){
    i = 5;
    print i;
    print i + 4;
    i = 7;
    print i;
+   aux();
 }
