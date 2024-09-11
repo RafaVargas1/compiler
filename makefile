@@ -1,8 +1,9 @@
 .PHONY: build
 
-r: clear compile run
+compile: parser lexer build file
 
-compile: parser lexer build
+file:
+	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar lang.tR
 
 run:
 	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar lang.LangCompiler -bs
@@ -18,9 +19,4 @@ build:
 	
 clear:
 	rm -R lang/parser/LangParser.java lang/parser/Terminals.java lang/lexer/LangScanner.java lang/lexer/LangScanner.java~ build/
-
-i: 
-	javac -cp .:./build:./lang/tools/beaver-rt-0.9.11.jar -d build lang/parser/LangParserAdaptor.java
-	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar LangParserAdaptor testes/semantica/certo/teste4.lan
-
 

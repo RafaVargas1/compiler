@@ -346,7 +346,7 @@ public class InterpreterVisitor extends Visitor {
     public void visit(Print e) {
         try {
             e.getExpr().accept(this);
-            System.out.println(operands.pop().toString());
+            //System.out.println(operands.pop().toString());
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
