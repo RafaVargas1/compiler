@@ -16,5 +16,5 @@ public class ID extends Expr {
         return this.i;
     }
 
-    public void accept(Visitor v){ System.out.println("Variavel"); v.visit(this);}
+    public void accept(Visitor v){ v.visit(this);}
 }

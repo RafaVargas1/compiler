@@ -44,15 +44,20 @@ public class InterpreterVisitor extends Visitor {
         try {
             for (Node n : p.getContent()) {
                 if (n instanceof Data) {
+                    System.out.println("Data");
                     n.accept(this);
                 }
                 if (n instanceof Function) {
+                    System.out.println("Start Derivation");
                     n.accept(this);
+                    System.out.println("Aceito");
                     //funcs.put(n.getName(), n);
                 }
             }
         } catch (Exception x) {
-            throw new RuntimeException(" Prog Error (" + p.getLine() + ", " + p.getColumn() + ") " + x.getMessage() + "Fim msg prog");
+            // x.printStackTrace();
+            throw new RuntimeException(x);
+            //throw new RuntimeException(" Prog Error (" + p.getLine() + ", " + p.getColumn() + ") " + x.getMessage() + "Fim msg prog");
         }
     }
 
@@ -236,8 +241,8 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(IntegerVar e) {
-        System.out.println("Numero inteiro ");
-        System.out.println(e.getValue());
+        // System.out.println("Numero inteiro ");
+        // System.out.println(e.getValue());
         try {
             operands.push(new Integer(e.getValue()));
         } catch (Exception x) {
@@ -262,11 +267,11 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(ID e) {
-        System.out.println("ID");
+        // System.out.println("ID");
         try {
             // operands.push(new String(e.getName()));
-            System.out.println("ID");
-            System.out.println(e);
+            // System.out.println("ID");
+            // System.out.println(e);
             // variablesValue.get(e.getName()).accept(this);ID
             operands.push(variablesValue.get(e.getName()));
             //variablesValue.get(e.getName());// Name, Expr
@@ -309,14 +314,14 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(Atribuition e) {
-        System.out.println("Atribuitoon");
+        // System.out.println("Atribuitoon");
         try {
             Node v = e.getName();
  
   
             // variablesValue.put(e.getName(), );
             e.getExpr().accept(this);;
-            System.out.println(operands);
+            // System.out.println(operands);
             if ( v instanceof ID) {
                 ID v2 = (ID) v;
                 variablesValue.put(v2.getName(), operands.pop()); // Nome da variavel i
@@ -324,8 +329,8 @@ public class InterpreterVisitor extends Visitor {
             }
 
 
-            System.out.println("->" + e.getExpr());
-            System.out.println(operands);
+            // System.out.println("->" + e.getExpr());
+            // System.out.println(operands);
             // System.out.println(operands);
             // Object val = operands.pop();
         //    x = i + 3
@@ -379,10 +384,10 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(Print e) {
-        System.out.println("Print");
+        // System.out.println("Print");
         try {
             e.getExpr().accept(this);
-            System.out.println(operands.pop().toString());
+            System.out.println(operands.pop().toString()); // Print
 
         } catch (Exception x) {
             throw new RuntimeException(" Print -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
@@ -400,13 +405,17 @@ public class InterpreterVisitor extends Visitor {
 
 
     public void visit(NodeList e) {
-        System.out.println("cmd1 -> " + e.getCmd1());
-        System.out.println("cmd -> " + e.getCmd2());
+        // System.out.println("cmd1 -> " + e.getCmd1());
+        // System.out.println("cmd -> " + e.getCmd2());
         try {
             e.getCmd1().accept(this);
-            e.getCmd2().accept(this);
+            
+            if ( e.getCmd2() != null)
+                e.getCmd2().accept(this);
+                
         } catch (Exception x) {
-            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+            x.printStackTrace();
+            throw new RuntimeException("Erro no node list -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
@@ -417,7 +426,6 @@ public class InterpreterVisitor extends Visitor {
         }
         
         env.push(localEnv);
-        System.out.println();
         f.getBody().accept(this);
         env.pop();
         retMode = false;

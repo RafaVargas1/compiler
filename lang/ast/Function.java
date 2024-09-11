@@ -23,6 +23,6 @@ public class Function extends Node {
     public Param[] getParams(){   return params; };
     public Node getBody(){ return body;}
 
-    public void accept(Visitor v){ System.out.println("Visitor: Function");v.visit(this);}
+    public void accept(Visitor v){ v.visit(this);}
 
 }
