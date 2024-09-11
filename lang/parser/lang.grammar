@@ -106,7 +106,7 @@ Cmd = OPENKEYS CmdList.l? CLOSEKEYS                                             
 ElseCmd = ELSE Cmd.c                                                                                          {: return c; :}
         ;
 
-CmdList = CmdList.l Cmd.c                                                                                     {: return new NodeList(c, l); :}
+CmdList =  Cmd.c CmdList.l                                                                                    {: return new NodeList(c, l); :}
         | Cmd.c                                                                                               {: return new NodeList(c); :}
         ;
 

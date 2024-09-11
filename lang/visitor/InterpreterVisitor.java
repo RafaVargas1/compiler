@@ -15,6 +15,8 @@ public class InterpreterVisitor extends Visitor {
     private Stack<Object> operands;
     private HashMap<String, Object> datas;
     private boolean retMode, debug;
+    private HashMap<String, Object> variablesValue;
+    private HashMap<String, Literal> variablestype;
 
     public InterpreterVisitor() {
         env = new Stack<HashMap<String, Object>>();
@@ -22,7 +24,8 @@ public class InterpreterVisitor extends Visitor {
         funcs = new HashMap<String, Function>();
         operands = new Stack<Object>();
         datas = new HashMap<String, Object>();
-
+        variablesValue = new HashMap<String, Object>(); // Nome
+        
         retMode = false;
         debug = false;
     }
@@ -37,6 +40,7 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(Program p) {
+        
         try {
             for (Node n : p.getContent()) {
                 if (n instanceof Data) {
@@ -48,7 +52,7 @@ public class InterpreterVisitor extends Visitor {
                 }
             }
         } catch (Exception x) {
-            throw new RuntimeException(" (" + p.getLine() + ", " + p.getColumn() + ") " + x.getMessage());
+            throw new RuntimeException(" Prog Error (" + p.getLine() + ", " + p.getColumn() + ") " + x.getMessage() + "Fim msg prog");
         }
     }
 
@@ -232,10 +236,12 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(IntegerVar e) {
+        System.out.println("Numero inteiro ");
+        System.out.println(e.getValue());
         try {
             operands.push(new Integer(e.getValue()));
         } catch (Exception x) {
-            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+            throw new RuntimeException(" Integer -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
@@ -256,10 +262,16 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(ID e) {
+        System.out.println("ID");
         try {
-            operands.push(new String(e.getName()));
+            // operands.push(new String(e.getName()));
+            System.out.println("ID");
+            System.out.println(e);
+            // variablesValue.get(e.getName()).accept(this);ID
+            operands.push(variablesValue.get(e.getName()));
+            //variablesValue.get(e.getName());// Name, Expr
         } catch (Exception x) {
-            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+            throw new RuntimeException(" Error Variable -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
@@ -289,8 +301,7 @@ public class InterpreterVisitor extends Visitor {
                 }
                 f.accept(this);
             } else {
-                throw new RuntimeException(
-                        " (" + e.getLine() + ", " + e.getColumn() + ") Função não definida " + e.getName());
+                throw new RuntimeException(" Function error -> (" + e.getLine() + ", " + e.getColumn() + ") Função não definida " + e.getName());
             }
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
@@ -298,11 +309,35 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(Atribuition e) {
+        System.out.println("Atribuitoon");
         try {
             Node v = e.getName();
-            ArrayList<Node> arr = (ArrayList<Node>) env.peek().get(v);
-            Object val = operands.pop();
+ 
+  
+            // variablesValue.put(e.getName(), );
+            e.getExpr().accept(this);;
+            System.out.println(operands);
+            if ( v instanceof ID) {
+                ID v2 = (ID) v;
+                variablesValue.put(v2.getName(), operands.pop()); // Nome da variavel i
+                // v.getName()
+            }
 
+
+            System.out.println("->" + e.getExpr());
+            System.out.println(operands);
+            // System.out.println(operands);
+            // Object val = operands.pop();
+        //    x = i + 3
+            // System.out.println(e.getName());
+            // System.out.println(e.getExpr());
+            // if ( arr.size() > 0 ) {
+
+            // } else { 
+            //     // env.peek().put(e.getExpr().getName(), val);
+            // }
+            
+            // System.out.println(env);
             //if (arr.size() > 0) {
             //    for (Node n : arr) {
             //        n.accept(this);
@@ -313,7 +348,7 @@ public class InterpreterVisitor extends Visitor {
             //    env.peek().put(e.getExpr().getName(), val);
             //}
         } catch (Exception x) {
-            throw new RuntimeException("(" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+            throw new RuntimeException("Atribuiton -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
@@ -344,11 +379,13 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(Print e) {
+        System.out.println("Print");
         try {
             e.getExpr().accept(this);
-            //System.out.println(operands.pop().toString());
+            System.out.println(operands.pop().toString());
+
         } catch (Exception x) {
-            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+            throw new RuntimeException(" Print -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
@@ -363,6 +400,8 @@ public class InterpreterVisitor extends Visitor {
 
 
     public void visit(NodeList e) {
+        System.out.println("cmd1 -> " + e.getCmd1());
+        System.out.println("cmd -> " + e.getCmd2());
         try {
             e.getCmd1().accept(this);
             e.getCmd2().accept(this);
@@ -376,8 +415,9 @@ public class InterpreterVisitor extends Visitor {
         for (int i = f.getParams().length - 1; i >= 0; i--) {
             localEnv.put(f.getParams()[i].getParamId(), operands.pop());
         }
-
+        
         env.push(localEnv);
+        System.out.println();
         f.getBody().accept(this);
         env.pop();
         retMode = false;

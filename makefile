@@ -2,6 +2,8 @@
 
 compile: parser lexer build file
 
+r: build file
+
 file:
 	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar lang.tR
 

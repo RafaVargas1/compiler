@@ -14,5 +14,5 @@ public class Program extends Node {
 
     public Node[] getContent() { return this.prog; }
 
-    public void accept(Visitor v){ System.out.println("Program"); v.visit(this);}
+    public void accept(Visitor v){ v.visit(this);}
 }
