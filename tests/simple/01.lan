@@ -1,15 +1,36 @@
-aux(){
-   print 10;
-   print i;
-   i = 150;
-   print i;
+
+aux( o :: Int) : Int, Int {
+   i = 1;
+   j= 3 - i;
+   j = 5 + o;
+
+   return j, i;
 }
 
+ data Ponto{
+   x :: Float;
+   y :: Float;
+}
+
+  
+
+
 main(){
+
+   p = new Ponto;
+   p.x = 10;
+   print 2;
+   print p.x;
+   print 1;
+   p.x = p.x + 3;
+   print p.x;
+
    i = 5;
+   i = i - 1;
    print i;
-   print i + 4;
-   i = 7;
-   print i;
-   aux();
+   k = aux(2)[0];
+   l = aux(3)[1];
+
+   print l;
+   print k;
 }

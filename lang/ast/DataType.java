@@ -13,5 +13,7 @@ public class DataType extends Literal {
         this.id = id;
     }
 
+    public String getName() { return this.id; };
+
     public void accept(Visitor v){ v.visit(this);}
 }

@@ -16,5 +16,11 @@ public class IndexedCall extends Expr {
         this.index = index;
     }
 
+    public String getName() { return this.id; };
+
+    public Expr[] getParams() { return this.params; };
+
+    public Expr getIndex() { return this.index; };
+
     public void accept(Visitor v){ v.visit(this);}
 }

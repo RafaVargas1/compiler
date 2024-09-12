@@ -16,7 +16,7 @@ public class Data extends Node {
 
     public String getName() { return this.id; };
 
-    public Param[] getParams(){ return this.decl; }
+    public Param[] getDecl(){ return this.decl; }
 
     public void accept(Visitor v){ v.visit(this);}
 }

@@ -12,5 +12,7 @@ public class Return extends Node {
          this.e = e;
     } 
 
+    public Expr[] getExpr(){ return this.e; };
+
     public void accept(Visitor v){ v.visit(this);}
 }

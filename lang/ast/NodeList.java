@@ -7,9 +7,9 @@ import lang.visitor.*;
 
 public class NodeList extends Node {
     private Node n;
-    private Node l;
+    private NodeList l;
 
-    public NodeList(Node n, Node l){
+    public NodeList(Node n, NodeList l){
         this.n = n;
         this.l = l;
     }
@@ -20,7 +20,7 @@ public class NodeList extends Node {
     }
 
     public Node getCmd1(){ return n;} 
-    public Node getCmd2(){ return l; }
+    public NodeList getCmd2(){ return l; }
 
     public void accept(Visitor v){ v.visit(this);}
 }

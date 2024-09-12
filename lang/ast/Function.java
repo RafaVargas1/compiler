@@ -19,7 +19,7 @@ public class Function extends Node {
     }
 
     public String getName(){ return id;};
-    public Node getTipo(){   return returnType; };
+    public NodeList getReturnType(){   return returnType; };
     public Param[] getParams(){   return params; };
     public Node getBody(){ return body;}
 

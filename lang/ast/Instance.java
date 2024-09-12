@@ -14,8 +14,8 @@ public class Instance extends Expr {
         this.e = e;
     }
 
-    public Node getName(){ return type; };
-    public Expr getSize(){ return e; }
+    public Node getType(){ return type; };
+    public Expr getExpr(){ return e; }
 
     public void accept(Visitor v){ v.visit(this);}
 }
