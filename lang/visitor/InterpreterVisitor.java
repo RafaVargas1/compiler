@@ -321,11 +321,6 @@ public class InterpreterVisitor extends Visitor {
             } 
         }
 
-        try {
-            operands.push(new String(e.getParent() + "." + e.getName()));
-        } catch (Exception x) {
-            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
-        }
     }
 
     // Comandos
@@ -358,10 +353,7 @@ public class InterpreterVisitor extends Visitor {
        
                 String name = ((ID) v2.getParent()).getName() + "." + v2.getName();
                 globalEnv.peek().put( name, operands.pop());
-                System.out.println(globalEnv);
             }
-
-            System.out.println(globalEnv);
 
         } catch (Exception x) {
             x.printStackTrace();
@@ -538,14 +530,14 @@ public class InterpreterVisitor extends Visitor {
             Function f = funcs.get(e.getName());
 
             System.out.println("Function");
-            System.out.println(f);
+            // System.out.println(f);
 
             if (f != null) {
                for (Node node : e.getParams()) {
                    node.accept(this);
                }
                f.accept(this);
-               System.out.println(operands);
+            //    System.out.println(operands);
                NodeList rt = f.getReturnType();
 
                int totalReturns = 1;
