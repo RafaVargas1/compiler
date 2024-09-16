@@ -13,5 +13,9 @@ public class Vector extends Literal {
         this.type = type;
     }
 
+    public Node getVectorType(){
+        return this.type;
+    }
+
     public void accept(Visitor v){ v.visit(this);}
 }

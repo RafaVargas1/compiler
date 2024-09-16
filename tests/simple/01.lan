@@ -1,36 +1,4 @@
-
-aux( o :: Int) : Int, Int {
-   i = 1;
-   j= 3 - i;
-   j = 5 + o;
-
-   return j, i;
-}
-
- data Ponto{
-   x :: Float;
-   y :: Float;
-}
-
-  
-
-
 main(){
-
-   p = new Ponto;
-   p.x = 10;
-   print 2;
-   print p.x;
-   print 1;
-   p.x = p.x + 3;
-   print p.x;
-
-   i = 5;
-   i = i - 1;
+   i = 5 / 2;
    print i;
-   k = aux(2)[0];
-   l = aux(3)[1];
-
-   print l;
-   print k;
 }
