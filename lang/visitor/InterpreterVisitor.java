@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
 
-import javax.swing.text.StyledEditorKit.BoldAction;
-
 import java.util.Scanner;
 
 import lang.ast.*;
@@ -90,7 +88,7 @@ public class InterpreterVisitor extends Visitor {
             } else if ( esq instanceof Float && dir instanceof Float){
                 operands.push(new Float(esq.floatValue() + dir.floatValue()));
             } else { 
-                throw new Exception("Na operação de soma os tipos das partes devem ser iguais")
+                throw new Exception("Na operação de soma os tipos das partes devem ser iguais");
             }
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
@@ -102,13 +100,15 @@ public class InterpreterVisitor extends Visitor {
             e.getA().accept(this);
             e.getB().accept(this);
             Number esq, dir;
+            dir = (Number) operands.pop();
+            esq = (Number) operands.pop();
 
             if ( esq instanceof Integer && dir instanceof Integer){ 
                 operands.push(new Integer(esq.intValue() + dir.intValue()));
             } else if ( esq instanceof Float && dir instanceof Float){
                 operands.push(new Float(esq.floatValue() + dir.floatValue()));
             } else { 
-                throw new Exception("Na operação de subtração os tipos das partes devem ser iguais")
+                throw new Exception("Na operação de subtração os tipos das partes devem ser iguais");
             }
             dir = (Number) operands.pop();
             esq = (Number) operands.pop();
@@ -131,7 +131,7 @@ public class InterpreterVisitor extends Visitor {
             } else if ( esq instanceof Float && dir instanceof Float){
                 operands.push(new Float(esq.floatValue() + dir.floatValue()));
             } else { 
-                throw new Exception("Na operação de soma os tipos das partes devem ser iguais")
+                throw new Exception("Na operação de soma os tipos das partes devem ser iguais");
             }
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
