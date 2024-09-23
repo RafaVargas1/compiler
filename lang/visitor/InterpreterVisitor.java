@@ -17,7 +17,7 @@ public class InterpreterVisitor extends Visitor {
     private HashMap<String, Object> datas;
 
     private boolean retMode;
-    
+
     public InterpreterVisitor() {
         globalEnv = new Stack<HashMap<String, Object>>();
         globalEnv.push(new HashMap<String, Object>()); // Inicializa ambiente global
@@ -59,6 +59,7 @@ public class InterpreterVisitor extends Visitor {
                     } else {
                         funcs.put(function.getName(), function);
                     }
+
 
                     if (function.getName().equals("main")) {
                         main = function;

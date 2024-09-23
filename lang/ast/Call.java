@@ -16,11 +16,14 @@ public class Call extends Node {
         this.r = r;
     }
 
-    public String getName(){ return id; }
+    public String getName(){ return this.id; }
     public Expr[] getArgs(){ 
         return this.p;
     }
     public NodeList getReturns() { return r; }
+
+
+    public NodeList getReturn() {return this.r; }
 
     public void accept(Visitor v){ v.visit(this);}
 }
