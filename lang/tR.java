@@ -29,17 +29,17 @@ public class tR {
             LangParser parser = new LangParser();
             Program ast = (Program) parser.parse(lexicResult);
 
-            // Interpreter(ast);
+            Interpreter(ast);
 
-            SemanticVisitor semanticVisitor = new SemanticVisitor();
-            ast.accept(semanticVisitor);
+           //SemanticVisitor semanticVisitor = new SemanticVisitor();
+           //ast.accept(semanticVisitor);
 
-            if (!semanticVisitor.getSemanticErrors().isEmpty()) {
-                System.err.println("Erros semânticos encontrados:");
-                for (String error : semanticVisitor.getSemanticErrors()) {
-                    System.err.println(error);
-                }
-            }
+           //if (!semanticVisitor.getSemanticErrors().isEmpty()) {
+           //    System.err.println("Erros semânticos encontrados:");
+           //    for (String error : semanticVisitor.getSemanticErrors()) {
+           //        System.err.println(error);
+           //    }
+           //}
 
  
         } catch (Exception e) {

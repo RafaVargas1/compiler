@@ -9,10 +9,10 @@ public class CharacterVar extends Expr {
     private String c;
 
     public CharacterVar(String c){
-        this.c = c;
+        this.c = c.replace("'", "");
     }
 
-    public String getValue(){ return c;}
+    public String getValue(){ return c; }
 
     public void accept(Visitor v){ v.visit(this);}
 

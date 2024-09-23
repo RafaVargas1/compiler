@@ -20,6 +20,7 @@ public class Call extends Node {
     public Expr[] getArgs(){ 
         return this.p;
     }
+    public NodeList getReturns() { return r; }
 
     public void accept(Visitor v){ v.visit(this);}
 }
