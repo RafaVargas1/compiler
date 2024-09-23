@@ -14,7 +14,7 @@ import lang.visitor.SemanticVisitor;
 
 public class tR {
 
-   public static void Interpreter(Program ast) {
+    public static void Interpreter(Program ast) {
         InterpreterVisitor visitor = new InterpreterVisitor();
         System.out.println("Start Interpreter");
         ast.accept(visitor);
@@ -41,10 +41,9 @@ public class tR {
                         // Verificação semântica
                         SemanticVisitor semanticVisitor = new SemanticVisitor();
                         ast.accept(semanticVisitor);
-            Interpreter(ast);
-
-           //SemanticVisitor semanticVisitor = new SemanticVisitor();
-           //ast.accept(semanticVisitor);
+                        Interpreter(ast);
+                        //SemanticVisitor semanticVisitor = new SemanticVisitor();
+                        //ast.accept(semanticVisitor);
 
                         if (!semanticVisitor.getSemanticErrors().isEmpty()) {
                             errorFiles.add(file.getName());
