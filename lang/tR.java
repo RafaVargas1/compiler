@@ -41,6 +41,10 @@ public class tR {
                         // Verificação semântica
                         SemanticVisitor semanticVisitor = new SemanticVisitor();
                         ast.accept(semanticVisitor);
+            Interpreter(ast);
+
+           //SemanticVisitor semanticVisitor = new SemanticVisitor();
+           //ast.accept(semanticVisitor);
 
                         if (!semanticVisitor.getSemanticErrors().isEmpty()) {
                             errorFiles.add(file.getName());

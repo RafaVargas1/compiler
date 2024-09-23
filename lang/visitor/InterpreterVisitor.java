@@ -25,7 +25,7 @@ public class InterpreterVisitor extends Visitor {
         funcs = new HashMap<String, Function>();
         operands = new Stack<Object>();
         datas = new HashMap<String, Object>();
-        
+
         retMode = false;
         debug = false;
     }
@@ -40,7 +40,7 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(Program p) {
-        
+
         try {
             Node main = null;
             for (Node n : p.getContent()) {
@@ -56,22 +56,23 @@ public class InterpreterVisitor extends Visitor {
                     funcs.put(function.getName(), function);
 
 
-                    if (function.getName().equals("main")){
+                    if (function.getName().equals("main")) {
                         main = function;
                     }
 
                 }
             }
-                    
-            if(main == null){
-                throw new RuntimeException( "Defina uma função main");
+
+            if (main == null) {
+                throw new RuntimeException("Defina uma função main");
             }
 
             main.accept(this);
         } catch (Exception x) {
             // x.printStackTrace();
             throw new RuntimeException(x);
-            //throw new RuntimeException(" Prog Error (" + p.getLine() + ", " + p.getColumn() + ") " + x.getMessage() + "Fim msg prog");
+            // throw new RuntimeException(" Prog Error (" + p.getLine() + ", " +
+            // p.getColumn() + ") " + x.getMessage() + "Fim msg prog");
         }
     }
 
@@ -85,11 +86,11 @@ public class InterpreterVisitor extends Visitor {
             dir = (Number) operands.pop();
             esq = (Number) operands.pop();
 
-            if ( esq instanceof Integer && dir instanceof Integer){ 
+            if (esq instanceof Integer && dir instanceof Integer) {
                 operands.push(new Integer(esq.intValue() + dir.intValue()));
-            } else if ( esq instanceof Float && dir instanceof Float){
+            } else if (esq instanceof Float && dir instanceof Float) {
                 operands.push(new Float(esq.floatValue() + dir.floatValue()));
-            } else { 
+            } else {
                 throw new Exception("Na operação de soma os tipos das partes devem ser iguais");
             }
         } catch (Exception x) {
@@ -105,14 +106,13 @@ public class InterpreterVisitor extends Visitor {
             dir = (Number) operands.pop();
             esq = (Number) operands.pop();
 
-            if ( esq instanceof Integer && dir instanceof Integer){ 
+            if (esq instanceof Integer && dir instanceof Integer) {
                 operands.push(new Integer(esq.intValue() - dir.intValue()));
-            } else if ( esq instanceof Float && dir instanceof Float){
+            } else if (esq instanceof Float && dir instanceof Float) {
                 operands.push(new Float(esq.floatValue() - dir.floatValue()));
-            } else { 
+            } else {
                 throw new Exception("Na operação de subtração os tipos das partes devem ser iguais");
             }
-
         } catch (Exception x) {
             throw new RuntimeException(" Sub (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
@@ -126,11 +126,11 @@ public class InterpreterVisitor extends Visitor {
             dir = (Number) operands.pop();
             esq = (Number) operands.pop();
 
-            if ( esq instanceof Integer && dir instanceof Integer){ 
+            if (esq instanceof Integer && dir instanceof Integer) {
                 operands.push(new Integer(esq.intValue() * dir.intValue()));
-            } else if ( esq instanceof Float && dir instanceof Float){
+            } else if (esq instanceof Float && dir instanceof Float) {
                 operands.push(new Float(esq.floatValue() * dir.floatValue()));
-            } else { 
+            } else {
                 throw new Exception("Na operação de soma os tipos das partes devem ser iguais");
             }
         } catch (Exception x) {
@@ -161,7 +161,7 @@ public class InterpreterVisitor extends Visitor {
             esq = (Number) operands.pop();
 
             if (!(esq instanceof Integer) || !(dir instanceof Integer)) {
-                throw new Exception("Os numeros na operacao de resto devem ser inteiros");                
+                throw new Exception("Os numeros na operacao de resto devem ser inteiros");
             }
             operands.push(new Integer(esq.intValue() % dir.intValue()));
         } catch (Exception x) {
@@ -169,24 +169,23 @@ public class InterpreterVisitor extends Visitor {
         }
     }
 
-public void visit(Negative e) {
-    try {
-        e.getN().accept(this);
-        Number num = (Number) operands.pop(); // O tipo Number é usado para armazenar tanto Float quanto Integer
+    public void visit(Negative e) {
+        try {
+            e.getN().accept(this);
+            Number num = (Number) operands.pop(); // O tipo Number é usado para armazenar tanto Float quanto Integer
 
-        if (num instanceof Float) {
-            operands.push(new Float(((Float) num) * -1));
-        } else if (num instanceof Integer) {
-            operands.push(new Integer(((Integer) num) * -1));
-        } else {
-            throw new Exception("Apenas numeros podem ser negativos");             
+            if (num instanceof Float) {
+                operands.push(new Float(((Float) num) * -1));
+            } else if (num instanceof Integer) {
+                operands.push(new Integer(((Integer) num) * -1));
+            } else {
+                throw new Exception("Apenas numeros podem ser negativos");
 
+            }
+        } catch (Exception x) {
+            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
-    } catch (Exception x) {
-        throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
     }
-}
-
 
     // Operadores Lógicos
     public void visit(And e) {
@@ -197,8 +196,8 @@ public void visit(Negative e) {
             dir = operands.pop();
             esq = operands.pop();
 
-            if (!(dir instanceof Boolean) || !(esq instanceof Boolean)){
-                throw new Exception("Operacao AND deve ser entre booleanos");               
+            if (!(dir instanceof Boolean) || !(esq instanceof Boolean)) {
+                throw new Exception("Operacao AND deve ser entre booleanos");
             }
 
             operands.push(new Boolean((Boolean) esq && (Boolean) dir));
@@ -215,13 +214,12 @@ public void visit(Negative e) {
             dir = operands.pop();
             esq = operands.pop();
 
-            if ( dir instanceof Integer && esq instanceof Integer){
+            if (dir instanceof Integer && esq instanceof Integer) {
                 operands.push(new Boolean((Integer) esq < (Integer) dir));
-            } else if ( ( dir instanceof Float && esq instanceof Float) ) {
+            } else if ((dir instanceof Float && esq instanceof Float)) {
                 operands.push(new Boolean((Float) esq < (Float) dir));
-            } else if ( 
-                (dir instanceof Float && esq instanceof Integer) 
-                || (dir instanceof Integer && esq instanceof Float) ) {
+            } else if ((dir instanceof Float && esq instanceof Integer)
+                    || (dir instanceof Integer && esq instanceof Float)) {
                 throw new Exception("Os numeros comparados devem ser do mesmo tipo");
             } else {
                 throw new Exception("Os valores " + dir + " e " + esq + " devem ser números de um mesmo tipo");
@@ -239,18 +237,17 @@ public void visit(Negative e) {
             dir = operands.pop();
             esq = operands.pop();
 
-            if ( dir instanceof Integer && esq instanceof Integer){
+            if (dir instanceof Integer && esq instanceof Integer) {
                 operands.push(new Boolean((Integer) esq < (Integer) dir));
-            } else if ( ( dir instanceof Float && esq instanceof Float) ) {
+            } else if ((dir instanceof Float && esq instanceof Float)) {
                 operands.push(new Boolean((Float) esq < (Float) dir));
-            } else if ( 
-                (dir instanceof Float && esq instanceof Integer) 
-                || (dir instanceof Integer && esq instanceof Float) ) {
+            } else if ((dir instanceof Float && esq instanceof Integer)
+                    || (dir instanceof Integer && esq instanceof Float)) {
                 throw new Exception("Os numeros comparados devem ser do mesmo tipo");
             } else {
                 throw new Exception("Os valores " + dir + " e " + esq + " devem ser números de um mesmo tipo");
             }
-            
+
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
@@ -319,8 +316,6 @@ public void visit(Negative e) {
     }
 
     public void visit(IntegerVar e) {
-        // System.out.println("Numero inteiro ");
-        // System.out.println(e.getValue());
         try {
             operands.push(new Integer(e.getValue()));
         } catch (Exception x) {
@@ -345,24 +340,39 @@ public void visit(Negative e) {
     }
 
     public void visit(ID e) {
-        // System.out.println("ID");
         try {
             Object v = globalEnv.peek().get(e.getName());
 
             if (v != null) {
                 operands.push(v);
             } else {
-                throw new RuntimeException("Variável ' " + e.getName() + " ' não declarada na linha " + e.getLine() + " coluna " + e.getColumn() );
+                throw new RuntimeException("Variável ' " + e.getName() + " ' não declarada na linha " + e.getLine()
+                        + " coluna " + e.getColumn());
             }
 
         } catch (Exception x) {
-            throw new RuntimeException(" Error Variable -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+            throw new RuntimeException(
+                    " Error Variable -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
     public void visit(Array e) {
         try {
-            operands.push(new String(e.getName() + "[" + e.getIndex() + "]"));
+            if (e.getName() instanceof Array) {
+                String arr_name = ((ID) ((Array) e.getName()).getName()).getName();
+                ((Array) e.getName()).getIndex().accept(this);
+                int inner_index = (Integer) operands.pop();
+                e.getIndex().accept(this);
+                int outer_index = (Integer) operands.pop();
+                Object[][] arr_content = (Object[][]) globalEnv.peek().get(arr_name);
+                operands.push(arr_content[inner_index][outer_index]);
+            } else {
+                String arr_name = ((ID) e.getName()).getName();
+                e.getIndex().accept(this);
+                int index = (Integer) operands.pop();
+                Object[] arr_content = (Object[]) globalEnv.peek().get(arr_name);
+                operands.push(arr_content[index]);
+            }
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
@@ -370,20 +380,35 @@ public void visit(Negative e) {
 
     // Tem que empilhar o valor no operands do acesso e
     public void visit(Component e) {
-        // System.out.println("Componentes");
-    
-        ID idParent = (ID) e.getParent();
-        Param[] params = (Param[]) globalEnv.peek().get(idParent.getName());
-    
-        for (Param p : params) {
- 
+        Node parent = e.getParent();
+        ID idParent = null;
+        Param[] params = null;
 
-            if ( p.getParamId().equals(e.getName()) ) {
-          
-                String name =  idParent.getName() + "." + e.getName();
+        if (parent instanceof Array) {
+            Array arrayparent = (Array) parent;
+            idParent = ((ID) (arrayparent).getName());
+
+            Object[] arraycontent = (Object[]) globalEnv.peek().get(idParent.getName());
+
+            arrayparent.getIndex().accept(this);
+            int idx = (Integer) operands.pop();
+
+            params = (Param[]) arraycontent[idx];
+
+        } else {
+            idParent = (ID) parent;
+
+            params = (Param[]) globalEnv.peek().get(idParent.getName());
+        }
+
+        for (Param p : params) {
+
+            if (p.getParamId().equals(e.getName())) {
+
+                String name = idParent.getName() + "." + e.getName();
                 operands.push(globalEnv.peek().get(name));
 
-            } 
+            }
         }
 
     }
@@ -397,8 +422,27 @@ public void visit(Negative e) {
                     node.accept(this);
                 }
                 f.accept(this);
+
+                NodeList returns = e.getReturns();
+                Node[] returnVariables = new Node[10];
+                int i = 0;
+                returnVariables[i] = returns.getCmd1();
+
+                while (returns.getCmd2() != null) {
+                    i++;
+                    returns = returns.getCmd2();
+                    returnVariables[i] = returns.getCmd1();
+                }
+        
+                for(int j = 0; j <= i; j++) {
+                    String var_name = ((ID) returnVariables[j]).getName();
+                    Object var_value = operands.pop();
+        
+                    globalEnv.peek().put(var_name, var_value);
+                }
             } else {
-                throw new RuntimeException(" Function error -> (" + e.getLine() + ", " + e.getColumn() + ") Função não definida " + e.getName());
+                throw new RuntimeException(" Function error -> (" + e.getLine() + ", " + e.getColumn()
+                        + ") Função não definida " + e.getName());
             }
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
@@ -411,13 +455,59 @@ public void visit(Negative e) {
             e.getExpr().accept(this);
 
             if (v instanceof ID) {
-                ID v2 = (ID) v;      
-                globalEnv.peek().put(v2.getName(), operands.pop()); // Nome da variavel     
-            } else if ( v instanceof Component) {
+                ID v2 = (ID) v;
+                globalEnv.peek().put(v2.getName(), operands.pop()); // Nome da variavel
+            } else if (v instanceof Component) {
                 Component v2 = (Component) v;
-       
-                String name = ((ID) v2.getParent()).getName() + "." + v2.getName();
-                globalEnv.peek().put( name, operands.pop());
+                String parent_name = "";
+
+                if (v2.getParent() instanceof Array) {
+                    parent_name = ((ID) ((Array) v2.getParent()).getName()).getName();
+                } else {
+                    parent_name = ((ID) v2.getParent()).getName();
+                }
+
+                String name =  parent_name + "." + v2.getName();
+                globalEnv.peek().put(name, operands.pop());
+            } else if (v instanceof Array) {
+                Array v2 = (Array) v;
+
+                String an;
+                if (v2.getName() instanceof Array) {
+                    an = ((ID) ((Array) v2.getName()).getName()).getName();
+                    ((Array) v2.getName()).getIndex().accept(this);
+                } else {
+                    an = ((ID) v2.getName()).getName();
+                }
+
+                v2.getIndex().accept(this);
+
+                int ot_index = -1;
+                if (v2.getName() instanceof Array) {
+                    ot_index = (Integer) operands.pop();
+                }
+                int index = (Integer) operands.pop();
+                Object content = operands.pop();
+
+                Object ac = globalEnv.peek().get(an);
+
+                if (ac == null) {
+                    globalEnv.peek().put(an, content);
+                } else {
+                    if (ac instanceof Object[][]) {
+                        Object[][] uac = (Object[][]) ac;
+                        if (ot_index > -1) {
+                            uac[index][ot_index] = content;
+                        } else {
+                            uac[index] = (Object[]) content;
+                        }
+                        globalEnv.peek().put(an, uac);
+                    } else if (ac instanceof Object[]) {
+                        Object[] uac = (Object[]) ac;
+                        uac[index] = content;
+                        globalEnv.peek().put(an, uac);
+                    }
+                }
             }
 
         } catch (Exception x) {
@@ -441,23 +531,13 @@ public void visit(Negative e) {
 
     public void visit(Iterate e) {
         try {
-            Expr condition = e.getTeste();
-            
+            e.getTeste().accept(this);
 
-            if (condition instanceof IntegerVar) {
-                int cont = 0;
-                IntegerVar contCondition = (IntegerVar) condition;
-                while ( cont < contCondition.getValue() ) {               
-                    e.getBody().accept(this);
-                    cont++;
-                }
-            } else {
-                e.getTeste().accept(this);
-
-                while ((Boolean) operands.pop()) {
-                    e.getBody().accept(this);
-                    e.getTeste().accept(this);
-                }
+            int counter = 0;
+            int stop = (Integer) operands.pop();
+            while (counter < stop) {
+                e.getBody().accept(this);
+                counter++;
             }
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
@@ -465,10 +545,15 @@ public void visit(Negative e) {
     }
 
     public void visit(Print e) {
-        // System.out.println("Print");
         try {
             e.getExpr().accept(this);
-            System.out.println(operands.pop().toString()); // Print
+            Object expr = operands.pop();
+            
+            if (expr instanceof String && ((String) expr).equals("\\n")) {
+                System.out.println();
+            } else {
+                System.out.print(expr); // Print
+            }
 
         } catch (Exception x) {
 
@@ -478,40 +563,38 @@ public void visit(Negative e) {
 
     public void visit(Read e) {
         try {
-            e.getName().accept(this);
-            // new Scanner(System.in).nextLine().accept(this); 
+            Scanner scanner = new Scanner(System.in);        
+            int input = scanner.nextInt();
+        
+            globalEnv.peek().put(((ID) e.getName()).getName(), input);
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
-
     public void visit(NodeList e) {
         try {
             e.getCmd1().accept(this);
-            
-            if ( e.getCmd2() != null)
+
+            if (e.getCmd2() != null)
                 e.getCmd2().accept(this);
 
         } catch (Exception x) {
-            throw new RuntimeException("Erro no node list -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+            throw new RuntimeException(
+                    "Erro no node list -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
     public void visit(Function f) {
-        System.out.println("Start F() - " + f.getName());
-
         HashMap<String, Object> localEnv = new HashMap<String, Object>();
         for (int i = f.getParams().length - 1; i >= 0; i--) {
             localEnv.put(f.getParams()[i].getParamId(), operands.pop());
         }
-        
+
         globalEnv.push(localEnv);
         f.getBody().accept(this);
         globalEnv.pop();
         retMode = false;
-        System.out.println("End F() - " + f.getName());
-
     }
 
     public void visit(Instance e) {
@@ -520,7 +603,17 @@ public void visit(Negative e) {
             if (nameType.getType() == null) {
                 throw new RuntimeException("Tipo de Data não é um tipo válido ");
 
-            } else if ( nameType.getType() == "DATA"){
+            } else if (e.getExpr() != null) {
+                if (nameType.getType() == "VECTOR") {
+                    e.getExpr().accept(this);
+                    Object[][] expr = new Object[(Integer) operands.pop()][];
+                    operands.push(expr);
+                } else {
+                    e.getExpr().accept(this);
+                    Object[] expr = new Object[(Integer) operands.pop()];
+                    operands.push(expr);
+                }
+            } else if (nameType.getType() == "DATA") {
                 DataType n = (DataType) nameType;
 
                 if (datas.get(n.getName()) == null) {
@@ -528,12 +621,7 @@ public void visit(Negative e) {
                 }
 
                 operands.push(datas.get(n.getName()));
-            } else if( nameType.getType() == "VECTOR") {
-                Vector v = (Vector) nameType;
-
-                System.out.println(v.getVectorType());
-                System.out.println("É vector");
-            }
+            } 
 
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
@@ -542,15 +630,14 @@ public void visit(Negative e) {
 
     public void visit(Return e) {
         Expr[] exprs = e.getExpr();
-     
-        for (int i=0; i < exprs.length; i++) {
+
+        for (int i = 0; i < exprs.length; i++) {
             exprs[i].accept(this);
         }
         retMode = true;
     }
 
     public void visit(Param e) {
-        System.out.println("Params");
         e.getParamType().accept(this);
 
         //
@@ -573,8 +660,6 @@ public void visit(Negative e) {
     }
 
     public void visit(Vector e) {
-        System.out.println("vector");
-        // System.out.println(e.getVectorType());
         // e.getType().accept(this);
     }
 
@@ -583,13 +668,13 @@ public void visit(Negative e) {
     }
 
     public void visit(Data e) {
-        //for (Param p : e.getParams()) {
-        //    p.getParamId().accept(this);
-        //    p.getParamType().accept(this);
-        //}
+        // for (Param p : e.getParams()) {
+        // p.getParamId().accept(this);
+        // p.getParamType().accept(this);
+        // }
         try {
-            datas.put( e.getName(), e.getDecl());
-            //datas.put(n.getName(), n.getParams());
+            datas.put(e.getName(), e.getDecl());
+            // datas.put(n.getName(), n.getParams());
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
@@ -598,45 +683,41 @@ public void visit(Negative e) {
     public void visit(IndexedCall e) {
         try {
             Function f = funcs.get(e.getName());
-
-            System.out.println("Function");
-            // System.out.println(f);
-
             if (f != null) {
-               for (Node node : e.getParams()) {
-                   node.accept(this);
-               }
-               f.accept(this);
-            //    System.out.println(operands);
-               NodeList rt = f.getReturnType();
+                for (Node node : e.getParams()) {
+                    node.accept(this);
+                }
+                f.accept(this);
+                NodeList rt = f.getReturnType();
 
-               int totalReturns = 1;
-               while (rt.getCmd2() != null) {
+                int totalReturns = 1;
+                while (rt.getCmd2() != null) {
                     totalReturns++;
                     rt = rt.getCmd2();
-               }
+                }
 
-               e.getIndex().accept(this);
-               int index = (int) operands.pop();
-               int i = totalReturns;
-               Object result = null;
-               
-               while ( i > 0) {
+                e.getIndex().accept(this);
+                int index = (int) operands.pop();
+                int i = totalReturns;
+                Object result = null;
+
+                while (i > 0) {
                     Object aux = operands.pop();
                     i--;
 
                     if (i == index) {
                         result = aux;
                     }
-               }
-               if ( result == null)
-                   throw new RuntimeException("Indice fora do range do retorno da função");
-               operands.push(result);
-        
-            //    Expr return = Expr operands.pop();
-               // operands.pop();
+                }
+                if (result == null)
+                    throw new RuntimeException("Indice fora do range do retorno da função");
+                operands.push(result);
+
+                // Expr return = Expr operands.pop();
+                // operands.pop();
             } else {
-               throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") Função não definida " + e.getName());
+                throw new RuntimeException(
+                        " (" + e.getLine() + ", " + e.getColumn() + ") Função não definida " + e.getName());
             }
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
