@@ -43,7 +43,14 @@ public class SemanticVisitor extends Visitor {
 
             if (n instanceof Function) {
                 Function function = (Function) n;
-                funcs.put(function.getName(), function);
+                Stack<Class<?>> paramTypes = new Stack<>();
+                for (Param par : function.getParams()) {
+                    paramTypes.add(getClassFromTypeName((Literal) par.getParamType()));
+                }
+
+                String signature = generateFunctionSignature(function.getName(), paramTypes);
+                funcs.put(signature, function);
+
                 if (function.getName().equals("main")) {
                     main = function;
                 }
@@ -61,70 +68,117 @@ public class SemanticVisitor extends Visitor {
         for (int i = f.getParams().length - 1; i >= 0; i--) {
             localEnv.put(f.getParams()[i].getParamId(), operands.pop());
         }
-        
+
+
         globalEnv.push(localEnv);
         f.getBody().accept(this);
         globalEnv.pop();
         retMode = false;
-
     }
 
+    public String generateFunctionSignature(String name, Stack<Class<?>> parameterTypes) {
+        StringBuilder signature = new StringBuilder(name);
+        signature.append("(");
+        for (Class<?> paramType : parameterTypes) {
+            if (paramType != null) {
+                signature.append(paramType.getSimpleName());
+            }
+            signature.append(",");
+        }
+        if (!parameterTypes.isEmpty()) {
+            signature.setLength(signature.length() - 1); // Remove the last comma
+        }
+        signature.append(")");
+        return signature.toString();
+    }
+
+
     public void visit(Atribuition e) {
+        if (retMode == true)
+            return;
+
         try {
             Node v = e.getName(); 
+            e.getExpr().accept(this);  // Processa a expressão a ser atribuída
 
-            e.getExpr().accept(this);
-
+            // Caso a variável seja um ID
             if (v instanceof ID) {
                 ID v2 = (ID) v;
-                System.out.println(v2);
                 Object alreadyValue = globalEnv.peek().get(v2.getName());
+                Object newValue = operands.pop();
 
+                // Verifica se a variável já possui um valor e compara os tipos
                 if (alreadyValue != null) {
-                    Object value = operands.pop();
-                    if (!value.getClass().equals(alreadyValue.getClass())) {
-                        semanticErrors.add("Tentando atribuir valor de tipo " + value.getClass() + " a uma variavel de tipo " + alreadyValue.getClass() + " na Linha " + e.getLine() );
+                    if (!newValue.getClass().equals(alreadyValue.getClass())) {
+                        semanticErrors.add("Tentando atribuir valor de tipo " + newValue.getClass() + " a uma variável de tipo " + alreadyValue.getClass() + " na linha " + e.getLine());
                     }
-                    
-            
                 } else {
-                    globalEnv.peek().put(v2.getName(), operands.pop()); // Nome da variavel     
-
+                    // Variável não existente, cria uma nova no ambiente
+                    globalEnv.peek().put(v2.getName(), newValue);
                 }
-       
-           
-            } else if ( v instanceof Component) {
-                Component v2 = (Component) v;
-               
-                String name = ((ID) v2.getParent()).getName() + "." + v2.getName();
                 
-                Param[] params = ((Param[]) globalEnv.peek().get(((ID) v2.getParent()).getName() ));
-                Boolean findProperty = false;
+            } 
+            // Caso seja um componente (acesso a um atributo de objeto)
+            else if (v instanceof Component) {
+                Component v2 = (Component) v;
+                String parent_name = ((ID) v2.getParent()).getName() + "." + v2.getName();
+                
+                Param[] params = (Param[]) globalEnv.peek().get(((ID) v2.getParent()).getName());
+                boolean findProperty = false;
 
-                for (Param param: params) {
-          
-                    if (param.getParamId().equals(v2.getName())){
+                for (Param param : params) {
+                    if (param.getParamId().equals(v2.getName())) {
                         findProperty = true;
                         Object value = operands.pop();
-            
                         Class<?> paramType = getClassFromTypeName((Literal) param.getParamType());
-                        if (value.getClass().equals(paramType)){
-                            globalEnv.peek().put( name, operands.pop());
+                        
+                        // Verificação de tipo para o atributo do objeto
+                        if (value.getClass().equals(paramType)) {
+                            globalEnv.peek().put(parent_name, value);
                         } else {
-                             semanticErrors.add("Tipo errado no atributo de Data. Experava " + value.getClass() + " recebido " + paramType);
+                            semanticErrors.add("Tipo errado no atributo. Esperava " + paramType + " recebido " + value.getClass());
                         }
-                    } 
+                    }
                 }
 
                 if (!findProperty) {
-                    semanticErrors.add("Acesso a parametro inexistente: " + v2.getName());
-
+                    semanticErrors.add("Acesso a parâmetro inexistente: " + v2.getName());
                 }
 
+            } 
+            // Caso seja um Array
+            else if (v instanceof Array) {
+                Array v2 = (Array) v;
+                String arrayName = ((ID) v2.getName()).getName();
+                
+                // Aceitação do índice
+                v2.getIndex().accept(this);
+                int index = (Integer) operands.pop();
+                Object newValue = operands.pop();
+
+                Object arrayContent = globalEnv.peek().get(arrayName);
+                if (arrayContent instanceof Object[]) {
+                    Object[] array = (Object[]) arrayContent;
+
+                    // Verificação de tipo no array
+                    if (array[index] != null && !newValue.getClass().equals(array[index].getClass())) {
+                        semanticErrors.add("Tipo incompatível no array " + arrayName + ". Esperado " + array[index].getClass() + " mas recebeu " + newValue.getClass() + " no índice " + index);
+                    }
+
+                    // Atribuição no array
+                    array[index] = newValue;
+                    globalEnv.peek().put(arrayName, array);
+                } else {
+                    semanticErrors.add("Tentando acessar um objeto não array como array: " + arrayName);
+                }
             }
-        } catch(Exception ex){}
-  
+
+        } catch (Exception x) {
+            x.printStackTrace();
+            throw new RuntimeException("Atribuição -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+        }
     }
+
 
     private Class<?> getClassFromTypeName(Literal typeName) {
         switch (typeName.getType()) {
@@ -144,6 +198,9 @@ public class SemanticVisitor extends Visitor {
 
     // Exemplo para visitar o retorno de uma função
     public void visit(Return e) {
+        if (retMode == true)
+            return;
+
         Expr[] exprs = e.getExpr();
      
         for (int i=0; i < exprs.length; i++) {
@@ -381,6 +438,7 @@ public class SemanticVisitor extends Visitor {
             semanticErrors.add("O valor " + e.getValue() + " não pode ser um char");
         }
     };
+
     public void visit (ID e) {
          Object v = globalEnv.peek().get(e.getName());
 
@@ -395,13 +453,15 @@ public class SemanticVisitor extends Visitor {
     public void visit (Component e) {};
 
     public void visit (If e) {
-        e.getTeste().accept(this);
+        if (retMode == true)
+            return;
 
+        e.getTeste().accept(this);
         Object test = operands.pop();
         if (test instanceof Boolean){
-            e.getThen().accept(this);
-            
-            if (e.getElse() != null) {
+            if ((Boolean)test){
+                e.getThen().accept(this);
+            } else if (e.getElse() != null) {
                 e.getElse().accept(this);
             }
         } else {
@@ -412,7 +472,10 @@ public class SemanticVisitor extends Visitor {
     };
 
     public void visit (Iterate e) {
-   e.getTeste().accept(this);
+        if (retMode == true)
+            return;
+
+        e.getTeste().accept(this);
 
             int counter = 0;
             int stop = (Integer) operands.pop();
@@ -421,8 +484,15 @@ public class SemanticVisitor extends Visitor {
                 counter++;
             }
     };
-    public void visit (Print e) {};
-    public void visit (Read e) {};
+    public void visit (Print e) {
+        if (retMode == true)
+            return;
+    };
+    public void visit (Read e) {
+        if (retMode == true)
+            return;
+
+    };
 
     public void visit (NodeList e) {
         e.getCmd1().accept(this);
@@ -433,22 +503,27 @@ public class SemanticVisitor extends Visitor {
     };
 
     public void visit(Call e) {
-        Function f = funcs.get(e.getName());
+        if (retMode == true)
+            return;
+
+        Stack<Class<?>> passedArguments = new Stack<>();
+
+        for (Expr exp: e.getArgs()) {
+            exp.accept(this);
+            Object v = operands.pop();
+            passedArguments.add(v.getClass());
+        }
+
+        String signature = generateFunctionSignature(e.getName(), passedArguments);
+        Function f = funcs.get(signature);
 
         if (f == null) {
             semanticErrors.add("Função não encontrada -> " + e.getName());
             return;
         }
 
-        Stack<Class<?>> passedArguments = new Stack<>();
         Stack<Class<?>> expectedArguments = new Stack<>();
 
-        for (Expr exp: e.getArgs()){
-            exp.accept(this);
-            Object v = operands.pop();
-            passedArguments.add(v.getClass());
-        }
-        
         for (Param par: f.getParams()){
             expectedArguments.add(getClassFromTypeName((Literal) par.getParamType()));
         }
@@ -516,58 +591,75 @@ public class SemanticVisitor extends Visitor {
         for (Node node : e.getArgs()) {
             node.accept(this);
         }
-        
+
         f.accept(this);
     }
 
-    public void visit(IndexedCall e) {
-   
-            Function f = funcs.get(e.getName());
+    public void visit(IndexedCall e) {   
+        Stack<Class<?>> passedArguments = new Stack<>();
+        for (Node node : e.getParams()) {
+            node.accept(this);
+            Object v = operands.pop();
+            passedArguments.add(v.getClass());
+        }
 
-            if (f != null) {
-               for (Node node : e.getParams()) {
-                   node.accept(this);
-               }
-               f.accept(this);
-               NodeList rt = f.getReturnType();
+        String signature = generateFunctionSignature(e.getName(), passedArguments);
+        Function f = funcs.get(signature);
 
-
-               int totalReturns = 1;
-               while (rt.getCmd2() != null) {
-                    totalReturns++;
-                    rt = rt.getCmd2();
-               }
-
-               e.getIndex().accept(this);
-               int index = (int) operands.pop();
-               int i = totalReturns;
-               Object result = null;
-               
-               while ( i > 0) {
-                    Object aux = operands.pop();
-                    i--;
-
-                    if (i == index) {
-                        result = aux;
-                    }
-               }
-               if ( result == null)
-                   semanticErrors.add("Indice fora do range do retorno da função");
-               
-               operands.push(result);
-
-            } else {
-               semanticErrors.add(" Função não definida " + e.getName());
+        if (f != null) {
+            for (Node node : e.getParams()) {
+                node.accept(this);
             }
+            f.accept(this);
+
+            NodeList rt = f.getReturnType();
+            
+            int totalReturns = 1;
+            while (rt.getCmd2() != null) {
+                totalReturns++;
+                rt = rt.getCmd2();
+            }
+
+            e.getIndex().accept(this);
+            int index = (int) operands.pop();
+            int i = totalReturns;
+            Object result = null;
+            
+            while ( i > 0) {
+                Object aux = operands.pop();
+                i--;
+
+                if (i == index) {
+                    result = aux;
+                }
+            }
+            if ( result == null)
+                semanticErrors.add("Indice fora do range do retorno da função");
+            
+            operands.push(result);
+
+        } else {
+            semanticErrors.add("Função não definida com essa assinatura -> " + signature);
+        }
    
     }
 
     public void visit (Instance e) {
-        Literal nameType = (Literal) e.getType();
+         Literal nameType = (Literal) e.getType();
         if (nameType.getType() == null) {
             semanticErrors.add("Tipo de Data não é um tipo válido ");
 
-        } else if ( nameType.getType() == "DATA"){
+        } else if (e.getExpr() != null) {
+            if (nameType.getType() == "VECTOR") {
+                e.getExpr().accept(this);
+                Object[][] expr = new Object[(Integer) operands.pop()][];
+                operands.push(expr);
+            } else {
+                e.getExpr().accept(this);
+                Object[] expr = new Object[(Integer) operands.pop()];
+                operands.push(expr);
+            }
+        } else if (nameType.getType() == "DATA") {
             DataType n = (DataType) nameType;
 
             if (datas.get(n.getName()) == null) {
@@ -575,18 +667,18 @@ public class SemanticVisitor extends Visitor {
             }
 
             operands.push(datas.get(n.getName()));
-        } else if( nameType.getType() == "VECTOR") {
-            Vector v = (Vector) nameType;
-
-        }
+        } 
     };
-    public void visit (Param e) {};
+    public void visit (Param e) {
+        e.getParamType().accept(this);
+    };
     public void visit (BoolType e) {};
     public void visit (CharType e) {};
     public void visit (FloatType e) {};
     public void visit (IntType e) {};
     public void visit (DataType e) {};
     public void visit (Vector e) {};
+
     public void visit (Data e) {
         datas.put( e.getName(), e.getDecl());
 
