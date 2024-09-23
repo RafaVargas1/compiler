@@ -1,6 +1,7 @@
 package lang.visitor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Stack;
 
@@ -15,9 +16,8 @@ public class InterpreterVisitor extends Visitor {
     private Stack<Object> operands;
     private HashMap<String, Object> datas;
 
-    private boolean retMode, debug;
-    private HashMap<String, Literal> variablestype;
-
+    private boolean retMode;
+    
     public InterpreterVisitor() {
         globalEnv = new Stack<HashMap<String, Object>>();
         globalEnv.push(new HashMap<String, Object>()); // Inicializa ambiente global
@@ -52,7 +52,13 @@ public class InterpreterVisitor extends Visitor {
 
                 if (n instanceof Function) {
                     Function function = (Function) n;
-                    funcs.put(function.getName(), function);
+                    Object f = funcs.get(function.getName());
+
+                    if (f != null) {
+                        funcs.put(function.getName() + "'", function);
+                    } else {
+                        funcs.put(function.getName(), function);
+                    }
 
                     if (function.getName().equals("main")) {
                         main = function;
@@ -400,12 +406,8 @@ public class InterpreterVisitor extends Visitor {
         }
 
         for (Param p : params) {
-
             if (p.getParamId().equals(e.getName())) {
-
-                String name = idParent.getName() + "." + e.getName();
-                operands.push(globalEnv.peek().get(name));
-
+                operands.push(p.getValue());
             }
         }
 
@@ -414,29 +416,40 @@ public class InterpreterVisitor extends Visitor {
     // Comandos
     public void visit(Call e) {
         try {
+            if (retMode) {
+                return;
+            }
+
             Function f = funcs.get(e.getName());
+            if (f.getParams().length != e.getArgs().length) {
+                f = funcs.get(e.getName() + "'");
+            }
+
             if (f != null) {
                 for (Node node : e.getArgs()) {
                     node.accept(this);
                 }
+
                 f.accept(this);
 
-                NodeList returns = e.getReturns();
-                Node[] returnVariables = new Node[10];
-                int i = 0;
-                returnVariables[i] = returns.getCmd1();
-
-                while (returns.getCmd2() != null) {
-                    i++;
-                    returns = returns.getCmd2();
+                if (e.getReturns() != null) {
+                    NodeList returns = e.getReturns();
+                    Node[] returnVariables = new Node[10];
+                    int i = 0;
                     returnVariables[i] = returns.getCmd1();
-                }
-        
-                for(int j = 0; j <= i; j++) {
-                    String var_name = ((ID) returnVariables[j]).getName();
-                    Object var_value = operands.pop();
-        
-                    globalEnv.peek().put(var_name, var_value);
+
+                    while (returns.getCmd2() != null) {
+                        i++;
+                        returns = returns.getCmd2();
+                        returnVariables[i] = returns.getCmd1();
+                    }
+
+                    for (int j = 0; j <= i; j++) {
+                        String var_name = ((ID) returnVariables[j]).getName();
+                        Object var_value = operands.pop();
+
+                        globalEnv.peek().put(var_name, var_value);
+                    }
                 }
             } else {
                 throw new RuntimeException(" Function error -> (" + e.getLine() + ", " + e.getColumn()
@@ -449,6 +462,10 @@ public class InterpreterVisitor extends Visitor {
 
     public void visit(Atribuition e) {
         try {
+            if (retMode) {
+                return;
+            }
+
             Node v = e.getName();
 
             e.getExpr().accept(this);
@@ -461,13 +478,39 @@ public class InterpreterVisitor extends Visitor {
                 String parent_name = "";
 
                 if (v2.getParent() instanceof Array) {
-                    parent_name = ((ID) ((Array) v2.getParent()).getName()).getName();
+                    Array arrayparent = (Array) v2.getParent();
+                    parent_name = ((ID) arrayparent.getName()).getName();
+                    arrayparent.getIndex().accept(this);
+                    int idx = (Integer) operands.pop();
+
+                    Object[] content = (Object[]) globalEnv.peek().get(parent_name);
+
+                    Param[] params = (Param[]) content[idx];
+                    Param[] paramsCopy = Arrays.copyOf(params, params.length);
+
+                    for (int i = 0; i < params.length; i++) {
+                        Param paramCopy = new Param(params[i]);
+                        if (paramCopy.getParamId().equals(v2.getName())) {
+                            paramCopy.setValue(operands.pop());
+                            paramsCopy[i] = paramCopy;
+                        }
+                    }
+
+                    content[idx] = paramsCopy;
+                    globalEnv.peek().put(parent_name, content);
                 } else {
                     parent_name = ((ID) v2.getParent()).getName();
-                }
 
-                String name =  parent_name + "." + v2.getName();
-                globalEnv.peek().put(name, operands.pop());
+                    Param[] params = (Param[]) globalEnv.peek().get(parent_name);
+
+                    for (Param param : params) {
+                        if (param.getParamId().equals(v2.getName())) {
+                            param.setValue(operands.pop());
+                        }
+                    }
+
+                    globalEnv.peek().put(parent_name, params);
+                }
             } else if (v instanceof Array) {
                 Array v2 = (Array) v;
 
@@ -517,6 +560,10 @@ public class InterpreterVisitor extends Visitor {
 
     public void visit(If e) {
         try {
+            if (retMode) {
+                return;
+            }
+
             e.getTeste().accept(this);
             if ((Boolean) operands.pop()) {
                 e.getThen().accept(this);
@@ -530,6 +577,10 @@ public class InterpreterVisitor extends Visitor {
 
     public void visit(Iterate e) {
         try {
+            if (retMode) {
+                return;
+            }
+
             e.getTeste().accept(this);
 
             int counter = 0;
@@ -545,9 +596,13 @@ public class InterpreterVisitor extends Visitor {
 
     public void visit(Print e) {
         try {
+            if (retMode) {
+                return;
+            }
+
             e.getExpr().accept(this);
             Object expr = operands.pop();
-            
+
             if (expr instanceof String && ((String) expr).equals("\\n")) {
                 System.out.println();
             } else {
@@ -562,9 +617,13 @@ public class InterpreterVisitor extends Visitor {
 
     public void visit(Read e) {
         try {
-            Scanner scanner = new Scanner(System.in);        
+            if (retMode) {
+                return;
+            }
+
+            Scanner scanner = new Scanner(System.in);
             int input = scanner.nextInt();
-        
+
             globalEnv.peek().put(((ID) e.getName()).getName(), input);
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
@@ -620,7 +679,7 @@ public class InterpreterVisitor extends Visitor {
                 }
 
                 operands.push(datas.get(n.getName()));
-            } 
+            }
 
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
@@ -628,6 +687,9 @@ public class InterpreterVisitor extends Visitor {
     }
 
     public void visit(Return e) {
+        if (retMode) {
+            return;
+        }
         Expr[] exprs = e.getExpr();
 
         for (int i = 0; i < exprs.length; i++) {

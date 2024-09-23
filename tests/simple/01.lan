@@ -1,24 +1,12 @@
---Saída esperada
-
----- The marvelous env Debugger ------ 
---p  :  {x=10, y=10}
-
-
-data Ponto{
-   x :: Float;
-   y :: Float;
+fibonacci(n :: Int) : Int {
+  if (n < 1)
+    return n;
+  if (n == 1)
+    return n;
+  return fibonacci(n-1)[0] + fibonacci(n-2)[0];
 }
 
-main(){
-   p = new Ponto ;
-   p.x = 10.0;
-   p.y = 10.0;
-   print '(';
-   print p.x;
-   print ',';
-   print ' ';
-   print p.y;
-   print ')';
-   print '\n';
+main() {
+  v = fibonacci(7)[0];
+  print v;
 }
-
