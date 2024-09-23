@@ -52,7 +52,9 @@ public class InterpreterVisitor extends Visitor {
 
                 if (n instanceof Function) {
                     Function function = (Function) n;
+        
                     funcs.put(function.getName(), function);
+
 
                     if (function.getName().equals("main")){
                         main = function;
@@ -104,15 +106,13 @@ public class InterpreterVisitor extends Visitor {
             esq = (Number) operands.pop();
 
             if ( esq instanceof Integer && dir instanceof Integer){ 
-                operands.push(new Integer(esq.intValue() + dir.intValue()));
+                operands.push(new Integer(esq.intValue() - dir.intValue()));
             } else if ( esq instanceof Float && dir instanceof Float){
-                operands.push(new Float(esq.floatValue() + dir.floatValue()));
+                operands.push(new Float(esq.floatValue() - dir.floatValue()));
             } else { 
                 throw new Exception("Na operação de subtração os tipos das partes devem ser iguais");
             }
-            dir = (Number) operands.pop();
-            esq = (Number) operands.pop();
-            operands.push(new Integer(esq.intValue() - dir.intValue()));
+
         } catch (Exception x) {
             throw new RuntimeException(" Sub (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
@@ -127,9 +127,9 @@ public class InterpreterVisitor extends Visitor {
             esq = (Number) operands.pop();
 
             if ( esq instanceof Integer && dir instanceof Integer){ 
-                operands.push(new Integer(esq.intValue() + dir.intValue()));
+                operands.push(new Integer(esq.intValue() * dir.intValue()));
             } else if ( esq instanceof Float && dir instanceof Float){
-                operands.push(new Float(esq.floatValue() + dir.floatValue()));
+                operands.push(new Float(esq.floatValue() * dir.floatValue()));
             } else { 
                 throw new Exception("Na operação de soma os tipos das partes devem ser iguais");
             }
@@ -390,7 +390,6 @@ public void visit(Negative e) {
 
     // Comandos
     public void visit(Call e) {
-        System.out.println("Called " + e.getName());
         try {
             Function f = funcs.get(e.getName());
             if (f != null) {
@@ -409,8 +408,6 @@ public void visit(Negative e) {
     public void visit(Atribuition e) {
         try {
             Node v = e.getName(); 
-                            System.out.println(e.getExpr());
-
             e.getExpr().accept(this);
 
             if (v instanceof ID) {
@@ -450,14 +447,11 @@ public void visit(Negative e) {
             if (condition instanceof IntegerVar) {
                 int cont = 0;
                 IntegerVar contCondition = (IntegerVar) condition;
-                // System.out.println();
-                while ( cont < contCondition.getValue() ) {
-               
+                while ( cont < contCondition.getValue() ) {               
                     e.getBody().accept(this);
                     cont++;
                 }
             } else {
-                System.out.println(e.getTeste());
                 e.getTeste().accept(this);
 
                 while ((Boolean) operands.pop()) {
