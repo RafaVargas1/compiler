@@ -1,6 +1,7 @@
 package lang.visitor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
@@ -10,14 +11,13 @@ import lang.ast.*;
 
 public class SemanticVisitor extends Visitor {
 
-    private Stack<HashMap<String, Object>> globalEnv; // Agora checamos tipos
-    private Stack<HashMap<String, Object>> globalEnvType;
+    private Stack<HashMap<String, Object>> globalEnv;
     private HashMap<String, Function> funcs;
     private List<String> semanticErrors = new ArrayList<>();
-    private Stack<Object> variablestype;
     private Stack<Object> operands;
     private HashMap<String, Object> datas;
     private boolean retMode;
+    private Stack<Class<?>> types;
 
     public SemanticVisitor() {
         globalEnv = new Stack<>();
@@ -26,6 +26,7 @@ public class SemanticVisitor extends Visitor {
         funcs = new HashMap<>();
         datas = new HashMap<String, Object>();
         retMode = false;
+        types = new Stack<>();
 
     }
 
@@ -34,7 +35,11 @@ public class SemanticVisitor extends Visitor {
         for (Node n : p.getContent()) {
             if (n instanceof Data) {
                 Data d = (Data) n;
-                datas.put(d.getName(), d.getDecl());
+                if (datas.get(d.getName()) == null) {
+                    datas.put(d.getName(), d.getDecl());
+                } else {
+                    semanticErrors.add("A estrutura" + d.getName() + " ja foi definida. Erro na linha " + p.getLine());
+                }
 
             }
 
@@ -63,7 +68,14 @@ public class SemanticVisitor extends Visitor {
     public void visit(Function f) {
         HashMap<String, Object> localEnv = new HashMap<String, Object>();
         for (int i = f.getParams().length - 1; i >= 0; i--) {
-            localEnv.put(f.getParams()[i].getParamId(), operands.pop());
+            localEnv.put(f.getParams()[i].getParamId(), getOperands());
+        }
+
+        NodeList declaredReturn = f.getReturnType();
+        while (declaredReturn != null) {
+            Literal type = (Literal) declaredReturn.getCmd1();
+            types.add(getClassFromTypeName(type));
+            declaredReturn = declaredReturn.getCmd2();
         }
 
         globalEnv.push(localEnv);
@@ -108,75 +120,156 @@ public class SemanticVisitor extends Visitor {
             if (v instanceof ID) {
                 ID v2 = (ID) v;
                 Object alreadyValue = globalEnv.peek().get(v2.getName());
-                Object newValue = operands.pop();
+
+                Object newValue = null;
+
+                if (!operands.isEmpty()) {
+                    newValue = getOperands();
+                } else {
+                    semanticErrors.add("Valor atribuído inválido na linha:" + e.getLine());
+                    return;
+                }
 
                 // Verifica se a variável já possui um valor e compara os tipos
                 if (alreadyValue != null) {
                     if (!newValue.getClass().equals(alreadyValue.getClass())) {
                         semanticErrors.add("Tentando atribuir valor de tipo " + newValue.getClass()
                                 + " a uma variável de tipo " + alreadyValue.getClass() + " na linha " + e.getLine());
+                        return;
                     }
-                } else {
+                    globalEnv.peek().put(v2.getName(), newValue);
+                } else if (newValue != null) {
                     // Variável não existente, cria uma nova no ambiente
                     globalEnv.peek().put(v2.getName(), newValue);
                 }
-
             }
             // Caso seja um componente (acesso a um atributo de objeto)
             else if (v instanceof Component) {
                 Component v2 = (Component) v;
-                String parent_name = ((ID) v2.getParent()).getName() + "." + v2.getName();
-
-                Param[] params = (Param[]) globalEnv.peek().get(((ID) v2.getParent()).getName());
+                String parent_name = "";
                 boolean findProperty = false;
 
-                for (Param param : params) {
-                    if (param.getParamId().equals(v2.getName())) {
-                        findProperty = true;
-                        Object value = operands.pop();
-                        Class<?> paramType = getClassFromTypeName((Literal) param.getParamType());
+                if (v2.getParent() instanceof Array) {
+                    Array arrayparent = (Array) v2.getParent();
+                    parent_name = ((ID) arrayparent.getName()).getName();
+                    arrayparent.getIndex().accept(this);
+                    int idx = (Integer) getOperands();
 
-                        // Verificação de tipo para o atributo do objeto
-                        if (value.getClass().equals(paramType)) {
-                            globalEnv.peek().put(parent_name, value);
-                        } else {
-                            semanticErrors.add(
-                                    "Tipo errado no atributo. Esperava " + paramType + " recebido " + value.getClass());
+                    Object[] content = (Object[]) globalEnv.peek().get(parent_name);
+
+                    Param[] params = (Param[]) content[idx];
+                    Param[] paramsCopy = Arrays.copyOf(params, params.length);
+
+                    for (int i = 0; i < params.length; i++) {
+                        Param paramCopy = new Param(params[i]);
+                        if (paramCopy.getParamId().equals(v2.getName())) {
+                            findProperty = true;
+                            Object value = getOperands();
+                            Class<?> paramType = getClassFromTypeName((Literal) paramCopy.getParamType());
+                            
+                            if (value.getClass().equals(paramType)) {
+                                paramCopy.setValue(value);
+                            } else {
+                                semanticErrors.add(
+                                        "Tipo errado no atributo. Esperava " + paramType + " recebido " + value.getClass());
+                            }
+                            paramsCopy[i] = paramCopy;
                         }
                     }
-                }
+
+                    content[idx] = paramsCopy;
+                    globalEnv.peek().put(parent_name, content);
+                } else {
+                    parent_name = ((ID) v2.getParent()).getName();
+
+                    Param[] params = (Param[]) globalEnv.peek().get(parent_name);
+
+                    for (Param param : params) {
+                        if (param.getParamId().equals(v2.getName())) {
+                            findProperty = true;
+                            Object value = getOperands();
+                            Class<?> paramType = getClassFromTypeName((Literal) param.getParamType());
+                            
+                            if (value.getClass().equals(paramType)) {
+                                param.setValue(value);
+                            } else {
+                                semanticErrors.add(
+                                        "Tipo errado no atributo. Esperava " + paramType + " recebido " + value.getClass());
+                            }
+                        }
+                    }
+
+                    globalEnv.peek().put(parent_name, params);
+                }                
 
                 if (!findProperty) {
                     semanticErrors.add("Acesso a parâmetro inexistente: " + v2.getName());
                 }
-
             }
             // Caso seja um Array
             else if (v instanceof Array) {
                 Array v2 = (Array) v;
-                String arrayName = ((ID) v2.getName()).getName();
 
-                // Aceitação do índice
-                v2.getIndex().accept(this);
-                int index = (Integer) operands.pop();
-                Object newValue = operands.pop();
-
-                Object arrayContent = globalEnv.peek().get(arrayName);
-                if (arrayContent instanceof Object[]) {
-                    Object[] array = (Object[]) arrayContent;
-
-                    // Verificação de tipo no array
-                    if (array[index] != null && !newValue.getClass().equals(array[index].getClass())) {
-                        semanticErrors
-                                .add("Tipo incompatível no array " + arrayName + ". Esperado " + array[index].getClass()
-                                        + " mas recebeu " + newValue.getClass() + " no índice " + index);
-                    }
-
-                    // Atribuição no array
-                    array[index] = newValue;
-                    globalEnv.peek().put(arrayName, array);
+                String an;
+                if (v2.getName() instanceof Array) {
+                    an = ((ID) ((Array) v2.getName()).getName()).getName();
+                    ((Array) v2.getName()).getIndex().accept(this);
                 } else {
-                    semanticErrors.add("Tentando acessar um objeto não array como array: " + arrayName);
+                    an = ((ID) v2.getName()).getName();
+                }
+
+                v2.getIndex().accept(this);
+
+                Integer ot_index = null;
+                if (v2.getName() instanceof Array) {
+                    ot_index = (Integer) getOperands();
+                }
+                Integer index = (Integer) getOperands();
+
+                if (index == null) {
+                    semanticErrors.add("O indice para acesso é invalido. Linha " + v.getLine());
+                    return;
+                }
+
+                Object content = getOperands();
+
+                Object ac = globalEnv.peek().get(an);
+
+                if (ac == null) {
+                    semanticErrors.add("Tentando acessar um objeto não array como array: " + an);
+                } else {
+                    if (ac instanceof Object[][]) {
+                        Object[][] uac = (Object[][]) ac;
+                        if (ot_index != null) {
+                            if (uac[index][ot_index] != null
+                                    && !content.getClass().equals(uac[index][ot_index].getClass())) {
+                                semanticErrors
+                                        .add("Tipo incompatível no array " + an + ". Esperado "
+                                                + uac[index][ot_index].getClass()
+                                                + " mas recebeu " + content.getClass() + " no índice " + index);
+                                return;
+                            }
+                            uac[index][ot_index] = content;
+                        } else {
+                            if (uac[index] != null && !content.getClass().equals(uac[index].getClass())) {
+                                semanticErrors
+                                        .add("Tipo incompatível no array " + an + ". Esperado " + uac[index].getClass()
+                                                + " mas recebeu " + content.getClass() + "[] no índice " + index);
+                                return;
+                            }
+                            uac[index] = (Object[]) content;
+                        }
+                        globalEnv.peek().put(an, uac);
+                    } else if (ac instanceof Object[]) {
+                        Object[] uac = (Object[]) ac;
+                        if (uac[index] != null && !content.getClass().equals(uac[index].getClass())) {
+                            semanticErrors
+                                    .add("Tipo incompatível no array " + an + ". Esperado " + uac[index].getClass()
+                                            + " mas recebeu " + content.getClass() + " no índice " + index);
+                        }
+                        uac[index] = content;
+                        globalEnv.peek().put(an, uac);
+                    }
                 }
             }
 
@@ -214,6 +307,16 @@ public class SemanticVisitor extends Visitor {
 
         for (int i = 0; i < exprs.length; i++) {
             exprs[i].accept(this);
+            Object value = getOperands();
+
+            Class<?> typeD = getTypes();
+
+            if (!value.getClass().equals(typeD)) {
+                semanticErrors.add("Tipo de retorno incosistente com o declarado");
+            }
+
+            operands.add(value);
+
         }
 
         retMode = true;
@@ -227,8 +330,8 @@ public class SemanticVisitor extends Visitor {
         e.getA().accept(this);
         e.getB().accept(this);
         Number esq, dir;
-        dir = (Number) operands.pop();
-        esq = (Number) operands.pop();
+        dir = (Number) getOperands();
+        esq = (Number) getOperands();
 
         if (esq instanceof Integer && dir instanceof Integer) {
             operands.push(new Integer(esq.intValue() + dir.intValue()));
@@ -244,8 +347,8 @@ public class SemanticVisitor extends Visitor {
         e.getA().accept(this);
         e.getB().accept(this);
         Number esq, dir;
-        dir = (Number) operands.pop();
-        esq = (Number) operands.pop();
+        dir = (Number) getOperands();
+        esq = (Number) getOperands();
 
         if (esq instanceof Integer && dir instanceof Integer) {
             operands.push(new Integer(esq.intValue() - dir.intValue()));
@@ -256,12 +359,31 @@ public class SemanticVisitor extends Visitor {
         }
     };
 
+    public Object getOperands() {
+        if (!operands.isEmpty()) {
+            return operands.pop();
+        }
+
+        semanticErrors.add("Tentativa de acesso a valor invalido");
+        return null;
+    }
+
+    public Class<?> getTypes() {
+        if (!types.isEmpty()) {
+            return types.pop();
+        }
+
+        semanticErrors.add("Tentativa de acesso a tipo invalido");
+        return null;
+    }
+
     public void visit(Multiplication e) {
         e.getA().accept(this);
         e.getB().accept(this);
         Number esq, dir;
-        dir = (Number) operands.pop();
-        esq = (Number) operands.pop();
+
+        dir = (Number) getOperands();
+        esq = (Number) getOperands();
 
         if (esq instanceof Integer && dir instanceof Integer) {
             operands.push(new Integer(esq.intValue() * dir.intValue()));
@@ -276,8 +398,8 @@ public class SemanticVisitor extends Visitor {
         e.getA().accept(this);
         e.getB().accept(this);
         Number esq, dir;
-        dir = (Number) operands.pop();
-        esq = (Number) operands.pop();
+        dir = (Number) getOperands();
+        esq = (Number) getOperands();
 
         if (esq instanceof Integer && dir instanceof Integer) {
             operands.push(new Integer(esq.intValue() / dir.intValue()));
@@ -293,8 +415,8 @@ public class SemanticVisitor extends Visitor {
         e.getB().accept(this);
         Number esq, dir;
 
-        dir = (Number) operands.pop();
-        esq = (Number) operands.pop();
+        dir = (Number) getOperands();
+        esq = (Number) getOperands();
 
         if (!(esq instanceof Integer) || !(dir instanceof Integer)) {
             semanticErrors.add("Os numeros na operacao de resto devem ser inteiros");
@@ -305,7 +427,7 @@ public class SemanticVisitor extends Visitor {
 
     public void visit(Negative e) {
         e.getN().accept(this);
-        Number num = (Number) operands.pop(); // O tipo Number é usado para armazenar tanto Float quanto Integer
+        Number num = (Number) getOperands(); // O tipo Number é usado para armazenar tanto Float quanto Integer
 
         if (num instanceof Float) {
             operands.push(new Float(((Float) num) * -1));
@@ -320,8 +442,8 @@ public class SemanticVisitor extends Visitor {
         e.getA().accept(this);
         e.getB().accept(this);
         Object esq, dir;
-        dir = operands.pop();
-        esq = operands.pop();
+        dir = getOperands();
+        esq = getOperands();
 
         if (!(dir instanceof Boolean) || !(esq instanceof Boolean)) {
             semanticErrors.add("Operacao AND deve ser entre booleanos");
@@ -335,8 +457,8 @@ public class SemanticVisitor extends Visitor {
         e.getA().accept(this);
         e.getB().accept(this);
         Object esq, dir;
-        dir = operands.pop();
-        esq = operands.pop();
+        dir = getOperands();
+        esq = getOperands();
 
         if (dir instanceof Integer && esq instanceof Integer) {
             operands.push(new Boolean((Integer) esq < (Integer) dir));
@@ -356,8 +478,8 @@ public class SemanticVisitor extends Visitor {
         e.getA().accept(this);
         e.getB().accept(this);
         Object esq, dir;
-        dir = operands.pop();
-        esq = operands.pop();
+        dir = getOperands();
+        esq = getOperands();
 
         if (dir instanceof Integer && esq instanceof Integer) {
             operands.push(new Boolean((Integer) esq < (Integer) dir));
@@ -375,8 +497,8 @@ public class SemanticVisitor extends Visitor {
         e.getA().accept(this);
         e.getB().accept(this);
         Object esq, dir;
-        dir = operands.pop();
-        esq = operands.pop();
+        dir = getOperands();
+        esq = getOperands();
 
         if ((dir instanceof Integer && esq instanceof Integer) ||
                 (dir instanceof Float && esq instanceof Float) ||
@@ -392,8 +514,8 @@ public class SemanticVisitor extends Visitor {
         e.getA().accept(this);
         e.getB().accept(this);
         Object esq, dir;
-        dir = operands.pop();
-        esq = operands.pop();
+        dir = getOperands();
+        esq = getOperands();
 
         if ((dir instanceof Integer && esq instanceof Integer) ||
                 (dir instanceof Float && esq instanceof Float) ||
@@ -407,7 +529,7 @@ public class SemanticVisitor extends Visitor {
 
     public void visit(Not e) {
         e.getN().accept(this);
-        Object op = operands.pop();
+        Object op = getOperands();
 
         if (op instanceof Boolean) {
             operands.push(new Boolean(!(Boolean) op));
@@ -469,9 +591,55 @@ public class SemanticVisitor extends Visitor {
     };
 
     public void visit(Array e) {
+        if (e.getName() instanceof Array) {
+            String arr_name = ((ID) ((Array) e.getName()).getName()).getName();
+            ((Array) e.getName()).getIndex().accept(this);
+            int inner_index = (Integer) getOperands();
+            e.getIndex().accept(this);
+            int outer_index = (Integer) getOperands();
+            Object[][] arr_content = (Object[][]) globalEnv.peek().get(arr_name);
+            operands.push(arr_content[inner_index][outer_index]);
+        } else {
+            String arr_name = ((ID) e.getName()).getName();
+            e.getIndex().accept(this);
+            int index = (Integer) getOperands();
+            Object[] arr_content = (Object[]) globalEnv.peek().get(arr_name);
+            operands.push(arr_content[index]);
+        }
     };
 
     public void visit(Component e) {
+        Node parent = e.getParent();
+        ID idParent = null;
+        Param[] params = null;
+
+        if (parent instanceof Array) {
+            Array arrayparent = (Array) parent;
+            idParent = ((ID) (arrayparent).getName());
+
+            Object[] arraycontent = (Object[]) globalEnv.peek().get(idParent.getName());
+
+            arrayparent.getIndex().accept(this);
+            int idx = (Integer) getOperands();
+
+            params = (Param[]) arraycontent[idx];
+        } else {
+            idParent = (ID) parent;
+
+            params = (Param[]) globalEnv.peek().get(idParent.getName());
+        }
+
+        if (params == null) {
+            semanticErrors.add("Tentativa de acesso inválida: " + e.getLine());
+            return;
+        }
+
+        for (Param p : params) {
+            if (p.getParamId().equals(e.getName())) {
+                operands.push(p.getValue());
+            }
+        }
+
     };
 
     public void visit(If e) {
@@ -479,7 +647,7 @@ public class SemanticVisitor extends Visitor {
             return;
 
         e.getTeste().accept(this);
-        Object test = operands.pop();
+        Object test = getOperands();
         if (test instanceof Boolean) {
             if ((Boolean) test) {
                 e.getThen().accept(this);
@@ -500,7 +668,7 @@ public class SemanticVisitor extends Visitor {
         e.getTeste().accept(this);
 
         int counter = 0;
-        int stop = (Integer) operands.pop();
+        int stop = (Integer) getOperands();
         while (counter < stop) {
             e.getBody().accept(this);
             counter++;
@@ -508,8 +676,12 @@ public class SemanticVisitor extends Visitor {
     };
 
     public void visit(Print e) {
-        if (retMode == true)
+        if (retMode == true) {
             return;
+        }
+
+        e.getExpr().accept(this);
+        getOperands();
     };
 
     public void visit(Read e) {
@@ -534,7 +706,7 @@ public class SemanticVisitor extends Visitor {
 
         for (Expr exp : e.getArgs()) {
             exp.accept(this);
-            Object v = operands.pop();
+            Object v = getOperands();
             passedArguments.add(updateType(v.getClass()));
         }
 
@@ -542,7 +714,7 @@ public class SemanticVisitor extends Visitor {
         Function f = funcs.get(signature);
 
         if (f == null) {
-            semanticErrors.add("Função não encontrada -> " + e.getName());
+            semanticErrors.add("Função não encontrada -> " + signature + e.getName());
             return;
         }
 
@@ -574,7 +746,9 @@ public class SemanticVisitor extends Visitor {
         // Obtenção do tipo de retorno esperado a partir da chamada (Call)
         while (expectedReturn != null) {
             ID id = (ID) expectedReturn.getCmd1();
+
             Object value = globalEnv.peek().get(id.getName());
+
             if (value != null) {
                 expectedReturnType.add(value.getClass());
             } else {
@@ -600,7 +774,6 @@ public class SemanticVisitor extends Visitor {
         }
 
         for (int i = 0; i < expectedReturnType.size(); i++) {
-
             if (expectedReturnType.get(i) != null) {
                 if (!expectedReturnType.get(i).equals(declaredReturnType.get(i))) {
                     semanticErrors.add("Tipo de retorno não corresponde na posição " + (i + 1) + " para a função -> "
@@ -615,6 +788,26 @@ public class SemanticVisitor extends Visitor {
         }
 
         f.accept(this);
+
+        if (e.getReturns() != null) {
+            NodeList returns = e.getReturns();
+            Node[] returnVariables = new Node[10];
+            int i = 0;
+            returnVariables[i] = returns.getCmd1();
+
+            while (returns.getCmd2() != null) {
+                i++;
+                returns = returns.getCmd2();
+                returnVariables[i] = returns.getCmd1();
+            }
+
+            for (int j = 0; j <= i; j++) {
+                String var_name = ((ID) returnVariables[j]).getName();
+                Object var_value = operands.pop();
+
+                globalEnv.peek().put(var_name, var_value);
+            }
+        }
     }
 
     public Class<?> updateType(Class<?> type) {
@@ -631,10 +824,11 @@ public class SemanticVisitor extends Visitor {
 
     public void visit(IndexedCall e) {
         Stack<Class<?>> passedArguments = new Stack<>();
+
         for (Node node : e.getParams()) {
             node.accept(this);
-            Object v = operands.pop();
-            passedArguments.add(v.getClass());
+            Object v = getOperands();
+            passedArguments.add(updateType(v.getClass()));
         }
 
         String signature = generateFunctionSignature(e.getName(), passedArguments);
@@ -644,7 +838,15 @@ public class SemanticVisitor extends Visitor {
             for (Node node : e.getParams()) {
                 node.accept(this);
             }
+
             f.accept(this);
+
+            NodeList declaredReturn = f.getReturnType();
+            while (declaredReturn != null) {
+                Literal type = (Literal) declaredReturn.getCmd1();
+                types.add(getClassFromTypeName(type));
+                declaredReturn = declaredReturn.getCmd2();
+            }
 
             NodeList rt = f.getReturnType();
 
@@ -655,12 +857,24 @@ public class SemanticVisitor extends Visitor {
             }
 
             e.getIndex().accept(this);
-            int index = (int) operands.pop();
+            Object indexObj = getOperands();
+
+            if (!(indexObj instanceof Integer)) {
+                semanticErrors.add("O indice de retorno deve ser um inteiro");
+                return;
+            }
+
+            Integer index = (Integer) indexObj;
+            if (index >= totalReturns) {
+                semanticErrors.add("Indice fora do range do retorno da função");
+                return;
+            }
+
             int i = totalReturns;
             Object result = null;
 
             while (i > 0) {
-                Object aux = operands.pop();
+                Object aux = getOperands();
                 i--;
 
                 if (i == index) {
@@ -671,26 +885,44 @@ public class SemanticVisitor extends Visitor {
                 semanticErrors.add("Indice fora do range do retorno da função");
 
             operands.push(result);
-
         } else {
             semanticErrors.add("Função não definida com essa assinatura -> " + signature);
         }
-
     }
 
     public void visit(Instance e) {
         Literal nameType = (Literal) e.getType();
         if (nameType.getType() == null) {
             semanticErrors.add("Tipo de Data não é um tipo válido ");
-
+            return;
         } else if (e.getExpr() != null) {
             if (nameType.getType() == "VECTOR") {
                 e.getExpr().accept(this);
-                Object[][] expr = new Object[(Integer) operands.pop()][];
+                Object size = getOperands();
+                if (size == null) {
+                    semanticErrors.add("Valor invalido para inicilizar a matriz");
+                    return;
+                } else if (!(size instanceof Integer)) {
+                    semanticErrors.add("Deve ser usado um inteiro para inicilizar a matriz");
+                    return;
+
+                }
+                Integer number = (Integer) size;
+                Object[][] expr = new Object[number][];
                 operands.push(expr);
             } else {
                 e.getExpr().accept(this);
-                Object[] expr = new Object[(Integer) operands.pop()];
+                Object size = getOperands();
+                if (size == null) {
+                    semanticErrors.add("Valor invalido para inicilizar o vetor");
+                    return;
+                } else if (!(size instanceof Integer)) {
+                    semanticErrors.add("Deve ser usado um inteiro para inicilizar o vetor");
+                    return;
+                }
+
+                Integer number = (Integer) size;
+                Object[] expr = new Object[number];
                 operands.push(expr);
             }
         } else if (nameType.getType() == "DATA") {
@@ -698,6 +930,7 @@ public class SemanticVisitor extends Visitor {
 
             if (datas.get(n.getName()) == null) {
                 semanticErrors.add("O tipo especial de Data " + n.getName() + " nao foi declarada");
+                return;
             }
 
             operands.push(datas.get(n.getName()));

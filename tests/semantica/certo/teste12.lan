@@ -18,6 +18,6 @@ main() {
         print 'P'; print 'A'; print 'R';
     }
     else {
-        print 'I'; print 'M'; print 'P'; print 'A'; print 'R';
+          print 'I'; print 'M'; print 'P'; print 'A'; print 'R';
     }
 }
