@@ -24,7 +24,7 @@ public class tR {
     public static void main(String[] args) {
         try {
             // Diretório contendo os arquivos de teste
-            File directory = new File("tests/simple");
+            File directory = new File("tests/semantica/errado");
             File[] files = directory.listFiles((dir, name) -> name.endsWith(".lan"));
 
             if (files != null && files.length > 0) {
@@ -41,7 +41,7 @@ public class tR {
                         // Verificação semântica
                         SemanticVisitor semanticVisitor = new SemanticVisitor();
                         ast.accept(semanticVisitor);
-                        Interpreter(ast);
+
                         //SemanticVisitor semanticVisitor = new SemanticVisitor();
                         //ast.accept(semanticVisitor);
 
@@ -52,6 +52,7 @@ public class tR {
                                 System.err.println(error);
                             }
                         } else {
+                            // Interpreter(ast);
                             correctFiles.add(file.getName());
                             System.out.println("Arquivo correto sem erros semânticos: " + file.getName());
                         }
