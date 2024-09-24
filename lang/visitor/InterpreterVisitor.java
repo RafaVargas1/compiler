@@ -1,6 +1,5 @@
 package lang.visitor;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Stack;
@@ -10,7 +9,6 @@ import java.util.Scanner;
 import lang.ast.*;
 
 public class InterpreterVisitor extends Visitor {
-
     private Stack<HashMap<String, Object>> globalEnv;
     private HashMap<String, Function> funcs;
     private Stack<Object> operands;
@@ -20,29 +18,19 @@ public class InterpreterVisitor extends Visitor {
 
     public InterpreterVisitor() {
         globalEnv = new Stack<HashMap<String, Object>>();
-        globalEnv.push(new HashMap<String, Object>()); // Inicializa ambiente global
+        globalEnv.push(new HashMap<String, Object>());
 
         funcs = new HashMap<String, Function>();
         operands = new Stack<Object>();
         datas = new HashMap<String, Object>();
 
         retMode = false;
-        debug = false;
-    }
-
-    public InterpreterVisitor(boolean debug) {
-        this();
-        this.debug = debug;
-    }
-
-    public void visit(Expr e) {
-        // Abstrato
     }
 
     public void visit(Program p) {
-
         try {
             Node main = null;
+
             for (Node n : p.getContent()) {
                 if (n instanceof Data) {
                     Data d = (Data) n;
@@ -52,19 +40,18 @@ public class InterpreterVisitor extends Visitor {
 
                 if (n instanceof Function) {
                     Function function = (Function) n;
-                    Object f = funcs.get(function.getName());
 
-                    if (f != null) {
-                        funcs.put(function.getName() + "'", function);
-                    } else {
-                        funcs.put(function.getName(), function);
+                    Stack<Literal> paramTypes = new Stack<>();
+                    for (Param param : function.getParams()) {
+                        paramTypes.add((Literal) param.getParamType());
                     }
 
+                    String f_name = generateFunctionSignature(function.getName(), paramTypes);
+                    funcs.put(f_name, function);
 
                     if (function.getName().equals("main")) {
                         main = function;
                     }
-
                 }
             }
 
@@ -73,17 +60,45 @@ public class InterpreterVisitor extends Visitor {
             }
 
             main.accept(this);
+        } catch (Exception x) { 
+            throw new RuntimeException(x); 
+        }
+    }
+
+    public void visit(Data e) {
+        try {
+            datas.put(e.getName(), e.getDecl());
         } catch (Exception x) {
-            // x.printStackTrace();
-            throw new RuntimeException(x);
-            // throw new RuntimeException(" Prog Error (" + p.getLine() + ", " +
-            // p.getColumn() + ") " + x.getMessage() + "Fim msg prog");
+            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+        }
+    }
+
+    public void visit(Function f) {
+        HashMap<String, Object> localEnv = new HashMap<String, Object>();
+        for (int i = f.getParams().length - 1; i >= 0; i--) {
+            localEnv.put(f.getParams()[i].getParamId(), operands.pop());
+        }
+
+        globalEnv.push(localEnv);
+        f.getBody().accept(this);
+        globalEnv.pop();
+        retMode = false;
+    }
+
+    public void visit(NodeList e) {
+        try {
+            e.getCmd1().accept(this);
+
+            if (e.getCmd2() != null) {
+                e.getCmd2().accept(this);
+            }
+        } catch (Exception x) {
+            throw new RuntimeException("Erro no node list -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
     // Operadores Matemáticos
     public void visit(Addition e) {
-
         try {
             e.getA().accept(this);
             e.getB().accept(this);
@@ -136,7 +151,7 @@ public class InterpreterVisitor extends Visitor {
             } else if (esq instanceof Float && dir instanceof Float) {
                 operands.push(new Float(esq.floatValue() * dir.floatValue()));
             } else {
-                throw new Exception("Na operação de soma os tipos das partes devem ser iguais");
+                throw new Exception("Na operação de multiplicação os tipos das partes devem ser iguais");
             }
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
@@ -177,7 +192,7 @@ public class InterpreterVisitor extends Visitor {
     public void visit(Negative e) {
         try {
             e.getN().accept(this);
-            Number num = (Number) operands.pop(); // O tipo Number é usado para armazenar tanto Float quanto Integer
+            Number num = (Number) operands.pop(); 
 
             if (num instanceof Float) {
                 operands.push(new Float(((Float) num) * -1));
@@ -185,7 +200,6 @@ public class InterpreterVisitor extends Visitor {
                 operands.push(new Integer(((Integer) num) * -1));
             } else {
                 throw new Exception("Apenas numeros podem ser negativos");
-
             }
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
@@ -252,7 +266,6 @@ public class InterpreterVisitor extends Visitor {
             } else {
                 throw new Exception("Os valores " + dir + " e " + esq + " devem ser números de um mesmo tipo");
             }
-
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
@@ -287,7 +300,7 @@ public class InterpreterVisitor extends Visitor {
         }
     }
 
-    // Variáveis
+    // Valores absolutos
     public void visit(True e) {
         try {
             operands.push(new Boolean(true));
@@ -312,14 +325,7 @@ public class InterpreterVisitor extends Visitor {
         }
     }
 
-    public void visit(Empty e) {
-        try {
-            operands.push(null);
-        } catch (Exception x) {
-            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
-        }
-    }
-
+    // Variáveis
     public void visit(IntegerVar e) {
         try {
             operands.push(new Integer(e.getValue()));
@@ -351,13 +357,10 @@ public class InterpreterVisitor extends Visitor {
             if (v != null) {
                 operands.push(v);
             } else {
-                throw new RuntimeException("Variável ' " + e.getName() + " ' não declarada na linha " + e.getLine()
-                        + " coluna " + e.getColumn());
+                throw new RuntimeException("Variável ' " + e.getName() + " ' não declarada na linha " + e.getLine() + " coluna " + e.getColumn());
             }
-
         } catch (Exception x) {
-            throw new RuntimeException(
-                    " Error Variable -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+            throw new RuntimeException(" Error Variable -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
 
@@ -383,7 +386,6 @@ public class InterpreterVisitor extends Visitor {
         }
     }
 
-    // Tem que empilhar o valor no operands do acesso e
     public void visit(Component e) {
         Node parent = e.getParent();
         ID idParent = null;
@@ -399,7 +401,6 @@ public class InterpreterVisitor extends Visitor {
             int idx = (Integer) operands.pop();
 
             params = (Param[]) arraycontent[idx];
-
         } else {
             idParent = (ID) parent;
 
@@ -414,18 +415,108 @@ public class InterpreterVisitor extends Visitor {
 
     }
 
+    // Expressões complexas    
+    public void visit(Instance e) {
+        try {
+            Literal nameType = (Literal) e.getType();
+            if (nameType.getType() == null) {
+                throw new RuntimeException("Tipo de Data não é um tipo válido ");
+
+            } else if (e.getExpr() != null) {
+                if (nameType.getType() == "VECTOR") {
+                    e.getExpr().accept(this);
+                    Object[][] expr = new Object[(Integer) operands.pop()][];
+                    operands.push(expr);
+                } else {
+                    e.getExpr().accept(this);
+                    Object[] expr = new Object[(Integer) operands.pop()];
+                    operands.push(expr);
+                }
+            } else if (nameType.getType() == "DATA") {
+                DataType n = (DataType) nameType;
+
+                if (datas.get(n.getName()) == null) {
+                    throw new RuntimeException("O tipo especial de Data " + n.getName() + " nao foi declarada");
+                }
+
+                operands.push(datas.get(n.getName()));
+            }
+
+        } catch (Exception x) {
+            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+        }
+    }
+    
+    public void visit(IndexedCall e) {
+        try {          
+            Expr[] expressions = e.getParams();
+            String[] classes = new String[expressions.length];
+
+            for (int i = 0; i < expressions.length; i++) {
+                expressions[i].accept(this);
+                classes[i] = renameType(operands.pop().getClass().getSimpleName());
+            }
+            
+            String f_name = generateFunctionSignature(e.getName(), classes);
+            Function f = funcs.get(f_name);
+
+            if (f != null) {
+                for (Node node : e.getParams()) {
+                    node.accept(this);
+                }
+
+                f.accept(this);
+
+                NodeList rt = f.getReturnType();
+
+                int totalReturns = 1;
+                while (rt.getCmd2() != null) {
+                    totalReturns++;
+                    rt = rt.getCmd2();
+                }
+
+                e.getIndex().accept(this);
+                int index = (int) operands.pop();
+                int i = totalReturns;
+                Object result = null;
+
+                while (i > 0) {
+                    Object aux = operands.pop();
+                    i--;
+
+                    if (i == index) {
+                        result = aux;
+                    }
+                }
+                if (result == null)
+                    throw new RuntimeException("Indice fora do range do retorno da função");
+                operands.push(result);
+            } else {
+                throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") Função não definida " + e.getName());
+            }
+        } catch (Exception x) {
+            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+        }
+    }
+
     // Comandos
     public void visit(Call e) {
         try {
             if (retMode) {
                 return;
-            }
+            }            
+           
+            Expr[] expressions = e.getArgs();
+            String[] classes = new String[expressions.length];
 
-            Function f = funcs.get(e.getName());
-            if (f.getParams().length != e.getArgs().length) {
-                f = funcs.get(e.getName() + "'");
+            for (int i = 0; i < expressions.length; i++) {
+                expressions[i].accept(this);
+                classes[i] = renameType(operands.pop().getClass().getSimpleName());
             }
-
+            
+            String f_name = generateFunctionSignature(e.getName(), classes);
+            Function f = funcs.get(f_name);
+            
             if (f != null) {
                 for (Node node : e.getArgs()) {
                     node.accept(this);
@@ -453,8 +544,7 @@ public class InterpreterVisitor extends Visitor {
                     }
                 }
             } else {
-                throw new RuntimeException(" Function error -> (" + e.getLine() + ", " + e.getColumn()
-                        + ") Função não definida " + e.getName());
+                throw new RuntimeException(" Function error -> (" + e.getLine() + ", " + e.getColumn() + ") Função não definida " + e.getName());
             }
         } catch (Exception x) {
             throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
@@ -473,7 +563,7 @@ public class InterpreterVisitor extends Visitor {
 
             if (v instanceof ID) {
                 ID v2 = (ID) v;
-                globalEnv.peek().put(v2.getName(), operands.pop()); // Nome da variavel
+                globalEnv.peek().put(v2.getName(), operands.pop());
             } else if (v instanceof Component) {
                 Component v2 = (Component) v;
                 String parent_name = "";
@@ -552,9 +642,7 @@ public class InterpreterVisitor extends Visitor {
                     }
                 }
             }
-
         } catch (Exception x) {
-            x.printStackTrace();
             throw new RuntimeException("Atribuiton -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
@@ -607,11 +695,9 @@ public class InterpreterVisitor extends Visitor {
             if (expr instanceof String && ((String) expr).equals("\\n")) {
                 System.out.println();
             } else {
-                System.out.print(expr); // Print
+                System.out.print(expr); 
             }
-
         } catch (Exception x) {
-
             throw new RuntimeException(" Print -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
         }
     }
@@ -631,62 +717,6 @@ public class InterpreterVisitor extends Visitor {
         }
     }
 
-    public void visit(NodeList e) {
-        try {
-            e.getCmd1().accept(this);
-
-            if (e.getCmd2() != null)
-                e.getCmd2().accept(this);
-
-        } catch (Exception x) {
-            throw new RuntimeException(
-                    "Erro no node list -> (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
-        }
-    }
-
-    public void visit(Function f) {
-        HashMap<String, Object> localEnv = new HashMap<String, Object>();
-        for (int i = f.getParams().length - 1; i >= 0; i--) {
-            localEnv.put(f.getParams()[i].getParamId(), operands.pop());
-        }
-
-        globalEnv.push(localEnv);
-        f.getBody().accept(this);
-        globalEnv.pop();
-        retMode = false;
-    }
-
-    public void visit(Instance e) {
-        try {
-            Literal nameType = (Literal) e.getType();
-            if (nameType.getType() == null) {
-                throw new RuntimeException("Tipo de Data não é um tipo válido ");
-
-            } else if (e.getExpr() != null) {
-                if (nameType.getType() == "VECTOR") {
-                    e.getExpr().accept(this);
-                    Object[][] expr = new Object[(Integer) operands.pop()][];
-                    operands.push(expr);
-                } else {
-                    e.getExpr().accept(this);
-                    Object[] expr = new Object[(Integer) operands.pop()];
-                    operands.push(expr);
-                }
-            } else if (nameType.getType() == "DATA") {
-                DataType n = (DataType) nameType;
-
-                if (datas.get(n.getName()) == null) {
-                    throw new RuntimeException("O tipo especial de Data " + n.getName() + " nao foi declarada");
-                }
-
-                operands.push(datas.get(n.getName()));
-            }
-
-        } catch (Exception x) {
-            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
-        }
-    }
-
     public void visit(Return e) {
         if (retMode) {
             return;
@@ -699,90 +729,90 @@ public class InterpreterVisitor extends Visitor {
         retMode = true;
     }
 
+    // Parâmetros e Tipos
     public void visit(Param e) {
         e.getParamType().accept(this);
-
-        //
     }
 
     public void visit(BoolType e) {
-        // e.getType().accept(this);
+        // Boolean
     }
 
     public void visit(CharType e) {
-        // e.getType().accept(this);
+        // Character
     }
 
     public void visit(FloatType e) {
-        // e.getType().accept(this);
+        // Float
     }
 
     public void visit(IntType e) {
-        // e.getType().accept(this);
+        // Integer
     }
 
     public void visit(Vector e) {
-        // e.getType().accept(this);
+        // Array
     }
 
     public void visit(DataType e) {
-        // e.getType().accept(this);
+        // Data
     }
 
-    public void visit(Data e) {
-        // for (Param p : e.getParams()) {
-        // p.getParamId().accept(this);
-        // p.getParamType().accept(this);
-        // }
-        try {
-            datas.put(e.getName(), e.getDecl());
-            // datas.put(n.getName(), n.getParams());
-        } catch (Exception x) {
-            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
-        }
-    }
+    // Funções auxiliares
+    public String generateFunctionSignature(String name, Stack<Literal> parameterTypes) {
+        StringBuilder signature = new StringBuilder(name);
 
-    public void visit(IndexedCall e) {
-        try {
-            Function f = funcs.get(e.getName());
-            if (f != null) {
-                for (Node node : e.getParams()) {
-                    node.accept(this);
-                }
-                f.accept(this);
-                NodeList rt = f.getReturnType();
+        signature.append("(");
 
-                int totalReturns = 1;
-                while (rt.getCmd2() != null) {
-                    totalReturns++;
-                    rt = rt.getCmd2();
-                }
-
-                e.getIndex().accept(this);
-                int index = (int) operands.pop();
-                int i = totalReturns;
-                Object result = null;
-
-                while (i > 0) {
-                    Object aux = operands.pop();
-                    i--;
-
-                    if (i == index) {
-                        result = aux;
-                    }
-                }
-                if (result == null)
-                    throw new RuntimeException("Indice fora do range do retorno da função");
-                operands.push(result);
-
-                // Expr return = Expr operands.pop();
-                // operands.pop();
-            } else {
-                throw new RuntimeException(
-                        " (" + e.getLine() + ", " + e.getColumn() + ") Função não definida " + e.getName());
+        for (Literal paramType : parameterTypes) {
+            if (paramType != null) {
+                signature.append(paramType.getType());
             }
-        } catch (Exception x) {
-            throw new RuntimeException(" (" + e.getLine() + ", " + e.getColumn() + ") " + x.getMessage());
+            signature.append(",");
+        }
+
+        if (!parameterTypes.isEmpty()) {
+            signature.setLength(signature.length() - 1); 
+        }
+
+        signature.append(")");
+
+        return signature.toString();
+    }
+
+    public String generateFunctionSignature(String name, String[] params) {
+        StringBuilder signature = new StringBuilder(name);
+
+        signature.append("(");
+
+        for (String paramType : params) {
+            signature.append(paramType);
+            signature.append(",");
+        }
+        
+        signature.setLength(signature.length() - 1); 
+
+        signature.append(")");
+
+        return signature.toString();
+    }
+
+    public String renameType(String type) {
+        switch (type) {
+            case "Integer":
+                return "INT";
+            case "Float":
+                return "FLOAT";
+            case "String":
+                return "CHAR";
+            case "Boolean":
+                return "BOOL";
+            case "Object[]":
+                return "VECTOR";
+            case "Param[]":
+                return "DATA";       
+            default:
+            throw new RuntimeException("Tipo inválido.");
         }
     }
 }

@@ -18,6 +18,7 @@ public class tR {
         InterpreterVisitor visitor = new InterpreterVisitor();
         System.out.println("Start Interpreter");
         ast.accept(visitor);
+        System.out.println();
         System.out.println("End Interpreter");
     }
 
@@ -42,8 +43,6 @@ public class tR {
                         SemanticVisitor semanticVisitor = new SemanticVisitor();
                         ast.accept(semanticVisitor);
                         Interpreter(ast);
-                        //SemanticVisitor semanticVisitor = new SemanticVisitor();
-                        //ast.accept(semanticVisitor);
 
                         if (!semanticVisitor.getSemanticErrors().isEmpty()) {
                             errorFiles.add(file.getName());

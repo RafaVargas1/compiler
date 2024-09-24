@@ -8,11 +8,10 @@ import java.util.Stack;
 import java.util.Scanner;
 import lang.ast.*;
 
-
 public class SemanticVisitor extends Visitor {
 
-    private Stack<HashMap<String, Object>> globalEnv;  // Agora checamos tipos
-    private Stack<HashMap<String, Object>> globalEnvType;  
+    private Stack<HashMap<String, Object>> globalEnv; // Agora checamos tipos
+    private Stack<HashMap<String, Object>> globalEnvType;
     private HashMap<String, Function> funcs;
     private List<String> semanticErrors = new ArrayList<>();
     private Stack<Object> variablestype;
@@ -20,11 +19,9 @@ public class SemanticVisitor extends Visitor {
     private HashMap<String, Object> datas;
     private boolean retMode;
 
-
-
     public SemanticVisitor() {
         globalEnv = new Stack<>();
-        globalEnv.push(new HashMap<>());  // Ambiente global inicial
+        globalEnv.push(new HashMap<>()); // Ambiente global inicial
         operands = new Stack<Object>();
         funcs = new HashMap<>();
         datas = new HashMap<String, Object>();
@@ -59,7 +56,7 @@ public class SemanticVisitor extends Visitor {
         if (main == null) {
             semanticErrors.add("Função 'main' não encontrada.");
         } else {
-            main.accept(this);  // Visita o corpo da função main
+            main.accept(this); // Visita o corpo da função main
         }
     }
 
@@ -68,7 +65,6 @@ public class SemanticVisitor extends Visitor {
         for (int i = f.getParams().length - 1; i >= 0; i--) {
             localEnv.put(f.getParams()[i].getParamId(), operands.pop());
         }
-
 
         globalEnv.push(localEnv);
         f.getBody().accept(this);
@@ -81,7 +77,15 @@ public class SemanticVisitor extends Visitor {
         signature.append("(");
         for (Class<?> paramType : parameterTypes) {
             if (paramType != null) {
-                signature.append(paramType.getSimpleName());
+                if (paramType.getSimpleName().equals("Param[]")) {
+                    signature.append("DataType");
+                } else if (paramType.getSimpleName().equals("Object[]")) {
+                    signature.append("Vector");
+                } else if (paramType.getSimpleName().equals("String")) {
+                    signature.append("Character");
+                } else {
+                    signature.append(paramType.getSimpleName());
+                }
             }
             signature.append(",");
         }
@@ -92,14 +96,13 @@ public class SemanticVisitor extends Visitor {
         return signature.toString();
     }
 
-
     public void visit(Atribuition e) {
         if (retMode == true)
             return;
 
         try {
-            Node v = e.getName(); 
-            e.getExpr().accept(this);  // Processa a expressão a ser atribuída
+            Node v = e.getName();
+            e.getExpr().accept(this); // Processa a expressão a ser atribuída
 
             // Caso a variável seja um ID
             if (v instanceof ID) {
@@ -110,19 +113,20 @@ public class SemanticVisitor extends Visitor {
                 // Verifica se a variável já possui um valor e compara os tipos
                 if (alreadyValue != null) {
                     if (!newValue.getClass().equals(alreadyValue.getClass())) {
-                        semanticErrors.add("Tentando atribuir valor de tipo " + newValue.getClass() + " a uma variável de tipo " + alreadyValue.getClass() + " na linha " + e.getLine());
+                        semanticErrors.add("Tentando atribuir valor de tipo " + newValue.getClass()
+                                + " a uma variável de tipo " + alreadyValue.getClass() + " na linha " + e.getLine());
                     }
                 } else {
                     // Variável não existente, cria uma nova no ambiente
                     globalEnv.peek().put(v2.getName(), newValue);
                 }
-                
-            } 
+
+            }
             // Caso seja um componente (acesso a um atributo de objeto)
             else if (v instanceof Component) {
                 Component v2 = (Component) v;
                 String parent_name = ((ID) v2.getParent()).getName() + "." + v2.getName();
-                
+
                 Param[] params = (Param[]) globalEnv.peek().get(((ID) v2.getParent()).getName());
                 boolean findProperty = false;
 
@@ -131,12 +135,13 @@ public class SemanticVisitor extends Visitor {
                         findProperty = true;
                         Object value = operands.pop();
                         Class<?> paramType = getClassFromTypeName((Literal) param.getParamType());
-                        
+
                         // Verificação de tipo para o atributo do objeto
                         if (value.getClass().equals(paramType)) {
                             globalEnv.peek().put(parent_name, value);
                         } else {
-                            semanticErrors.add("Tipo errado no atributo. Esperava " + paramType + " recebido " + value.getClass());
+                            semanticErrors.add(
+                                    "Tipo errado no atributo. Esperava " + paramType + " recebido " + value.getClass());
                         }
                     }
                 }
@@ -145,12 +150,12 @@ public class SemanticVisitor extends Visitor {
                     semanticErrors.add("Acesso a parâmetro inexistente: " + v2.getName());
                 }
 
-            } 
+            }
             // Caso seja um Array
             else if (v instanceof Array) {
                 Array v2 = (Array) v;
                 String arrayName = ((ID) v2.getName()).getName();
-                
+
                 // Aceitação do índice
                 v2.getIndex().accept(this);
                 int index = (Integer) operands.pop();
@@ -162,7 +167,9 @@ public class SemanticVisitor extends Visitor {
 
                     // Verificação de tipo no array
                     if (array[index] != null && !newValue.getClass().equals(array[index].getClass())) {
-                        semanticErrors.add("Tipo incompatível no array " + arrayName + ". Esperado " + array[index].getClass() + " mas recebeu " + newValue.getClass() + " no índice " + index);
+                        semanticErrors
+                                .add("Tipo incompatível no array " + arrayName + ". Esperado " + array[index].getClass()
+                                        + " mas recebeu " + newValue.getClass() + " no índice " + index);
                     }
 
                     // Atribuição no array
@@ -179,7 +186,6 @@ public class SemanticVisitor extends Visitor {
         }
     }
 
-
     private Class<?> getClassFromTypeName(Literal typeName) {
         switch (typeName.getType()) {
             case "INT":
@@ -190,11 +196,14 @@ public class SemanticVisitor extends Visitor {
                 return Boolean.class;
             case "CHAR":
                 return Character.class;
+            case "VECTOR":
+                return Vector.class;
+            case "DATA":
+                return DataType.class;
             default:
                 throw new IllegalArgumentException("Tipo desconhecido: " + typeName);
         }
     }
-
 
     // Exemplo para visitar o retorno de uma função
     public void visit(Return e) {
@@ -202,8 +211,8 @@ public class SemanticVisitor extends Visitor {
             return;
 
         Expr[] exprs = e.getExpr();
-     
-        for (int i=0; i < exprs.length; i++) {
+
+        for (int i = 0; i < exprs.length; i++) {
             exprs[i].accept(this);
         }
 
@@ -221,60 +230,65 @@ public class SemanticVisitor extends Visitor {
         dir = (Number) operands.pop();
         esq = (Number) operands.pop();
 
-        if ( esq instanceof Integer && dir instanceof Integer){ 
-                operands.push(new Integer(esq.intValue() + dir.intValue()));
-        } else if ( esq instanceof Float && dir instanceof Float){
+        if (esq instanceof Integer && dir instanceof Integer) {
+            operands.push(new Integer(esq.intValue() + dir.intValue()));
+        } else if (esq instanceof Float && dir instanceof Float) {
             operands.push(new Float(esq.floatValue() + dir.floatValue()));
-        } else { 
-            semanticErrors.add("Na operação de soma os tipos das partes devem ser iguais. Linha: " +e.getLine() + " Coluna " + e.getColumn());
+        } else {
+            semanticErrors.add("Na operação de soma os tipos das partes devem ser iguais. Linha: " + e.getLine()
+                    + " Coluna " + e.getColumn());
         }
     }
-    public void visit (Subtraction e) {
+
+    public void visit(Subtraction e) {
         e.getA().accept(this);
         e.getB().accept(this);
         Number esq, dir;
         dir = (Number) operands.pop();
         esq = (Number) operands.pop();
 
-        if ( esq instanceof Integer && dir instanceof Integer){ 
+        if (esq instanceof Integer && dir instanceof Integer) {
             operands.push(new Integer(esq.intValue() - dir.intValue()));
-        } else if ( esq instanceof Float && dir instanceof Float){
+        } else if (esq instanceof Float && dir instanceof Float) {
             operands.push(new Float(esq.floatValue() - dir.floatValue()));
-        } else { 
+        } else {
             semanticErrors.add("Na operação de subtração os tipos das partes devem ser iguais");
         }
     };
-    public void visit (Multiplication e) {
+
+    public void visit(Multiplication e) {
         e.getA().accept(this);
         e.getB().accept(this);
         Number esq, dir;
         dir = (Number) operands.pop();
         esq = (Number) operands.pop();
 
-        if ( esq instanceof Integer && dir instanceof Integer){ 
+        if (esq instanceof Integer && dir instanceof Integer) {
             operands.push(new Integer(esq.intValue() * dir.intValue()));
-        } else if ( esq instanceof Float && dir instanceof Float){
+        } else if (esq instanceof Float && dir instanceof Float) {
             operands.push(new Float(esq.floatValue() * dir.floatValue()));
-        } else { 
+        } else {
             semanticErrors.add("Na operação de soma os tipos das partes devem ser iguais");
         }
     };
-    public void visit (Division e) {
+
+    public void visit(Division e) {
         e.getA().accept(this);
         e.getB().accept(this);
         Number esq, dir;
         dir = (Number) operands.pop();
         esq = (Number) operands.pop();
 
-        if ( esq instanceof Integer && dir instanceof Integer){ 
+        if (esq instanceof Integer && dir instanceof Integer) {
             operands.push(new Integer(esq.intValue() / dir.intValue()));
-        } else if ( esq instanceof Float && dir instanceof Float){
+        } else if (esq instanceof Float && dir instanceof Float) {
             operands.push(new Float(esq.floatValue() / dir.floatValue()));
-        } else { 
+        } else {
             semanticErrors.add("Na operação de divisão os tipos das partes devem ser iguais");
         }
     };
-    public void visit (Mod e) {
+
+    public void visit(Mod e) {
         e.getA().accept(this);
         e.getB().accept(this);
         Number esq, dir;
@@ -283,12 +297,13 @@ public class SemanticVisitor extends Visitor {
         esq = (Number) operands.pop();
 
         if (!(esq instanceof Integer) || !(dir instanceof Integer)) {
-            semanticErrors.add("Os numeros na operacao de resto devem ser inteiros");                
+            semanticErrors.add("Os numeros na operacao de resto devem ser inteiros");
             return;
         }
         operands.push(new Integer(esq.intValue() % dir.intValue()));
     };
-    public void visit (Negative e) {
+
+    public void visit(Negative e) {
         e.getN().accept(this);
         Number num = (Number) operands.pop(); // O tipo Number é usado para armazenar tanto Float quanto Integer
 
@@ -297,37 +312,38 @@ public class SemanticVisitor extends Visitor {
         } else if (num instanceof Integer) {
             operands.push(new Integer(((Integer) num) * -1));
         } else {
-            semanticErrors.add("Apenas numeros podem ser negativos");             
+            semanticErrors.add("Apenas numeros podem ser negativos");
         }
     };
-    public void visit (And e) {
+
+    public void visit(And e) {
         e.getA().accept(this);
         e.getB().accept(this);
         Object esq, dir;
         dir = operands.pop();
         esq = operands.pop();
 
-        if (!(dir instanceof Boolean) || !(esq instanceof Boolean)){
+        if (!(dir instanceof Boolean) || !(esq instanceof Boolean)) {
             semanticErrors.add("Operacao AND deve ser entre booleanos");
-            return;           
+            return;
         }
 
         operands.push(new Boolean((Boolean) esq && (Boolean) dir));
     };
-    public void visit (Smaller e) {
+
+    public void visit(Smaller e) {
         e.getA().accept(this);
         e.getB().accept(this);
         Object esq, dir;
         dir = operands.pop();
         esq = operands.pop();
 
-        if ( dir instanceof Integer && esq instanceof Integer){
+        if (dir instanceof Integer && esq instanceof Integer) {
             operands.push(new Boolean((Integer) esq < (Integer) dir));
-        } else if ( ( dir instanceof Float && esq instanceof Float) ) {
+        } else if ((dir instanceof Float && esq instanceof Float)) {
             operands.push(new Boolean((Float) esq < (Float) dir));
-        } else if ( 
-            (dir instanceof Float && esq instanceof Integer) 
-            || (dir instanceof Integer && esq instanceof Float) ) {
+        } else if ((dir instanceof Float && esq instanceof Integer)
+                || (dir instanceof Integer && esq instanceof Float)) {
             semanticErrors.add("Os numeros comparados devem ser do mesmo tipo");
             return;
         } else {
@@ -335,66 +351,65 @@ public class SemanticVisitor extends Visitor {
             return;
         }
     };
-    public void visit (Greater e) {
+
+    public void visit(Greater e) {
         e.getA().accept(this);
         e.getB().accept(this);
         Object esq, dir;
         dir = operands.pop();
         esq = operands.pop();
 
-        if ( dir instanceof Integer && esq instanceof Integer){
+        if (dir instanceof Integer && esq instanceof Integer) {
             operands.push(new Boolean((Integer) esq < (Integer) dir));
-        } else if ( ( dir instanceof Float && esq instanceof Float) ) {
+        } else if ((dir instanceof Float && esq instanceof Float)) {
             operands.push(new Boolean((Float) esq < (Float) dir));
-        } else if ( 
-            (dir instanceof Float && esq instanceof Integer) 
-            || (dir instanceof Integer && esq instanceof Float) ) {
+        } else if ((dir instanceof Float && esq instanceof Integer)
+                || (dir instanceof Integer && esq instanceof Float)) {
             semanticErrors.add("Os numeros comparados devem ser do mesmo tipo");
         } else {
             semanticErrors.add("Os valores " + dir + " e " + esq + " devem ser números de um mesmo tipo");
         }
     };
-    public void visit (Equal e) {
+
+    public void visit(Equal e) {
         e.getA().accept(this);
         e.getB().accept(this);
         Object esq, dir;
         dir = operands.pop();
         esq = operands.pop();
 
-        if ( 
-            ( dir instanceof Integer && esq instanceof Integer) || 
-            ( dir instanceof Float && esq instanceof Float) || 
-            ( dir instanceof String && esq instanceof String) ||
-            ( dir instanceof Character && esq instanceof Character)
-        ){
+        if ((dir instanceof Integer && esq instanceof Integer) ||
+                (dir instanceof Float && esq instanceof Float) ||
+                (dir instanceof String && esq instanceof String) ||
+                (dir instanceof Character && esq instanceof Character)) {
             operands.push(new Boolean(dir.equals(esq)));
         } else {
             semanticErrors.add("Os valores " + dir + " e " + esq + " devem ser números de um mesmo tipo");
         }
     };
-    public void visit (Different e) {
+
+    public void visit(Different e) {
         e.getA().accept(this);
         e.getB().accept(this);
         Object esq, dir;
         dir = operands.pop();
         esq = operands.pop();
 
-        if ( 
-            ( dir instanceof Integer && esq instanceof Integer) || 
-            ( dir instanceof Float && esq instanceof Float) || 
-            ( dir instanceof String && esq instanceof String) ||
-            ( dir instanceof Character && esq instanceof Character)
-        ){
+        if ((dir instanceof Integer && esq instanceof Integer) ||
+                (dir instanceof Float && esq instanceof Float) ||
+                (dir instanceof String && esq instanceof String) ||
+                (dir instanceof Character && esq instanceof Character)) {
             operands.push(new Boolean(!dir.equals(esq)));
         } else {
             semanticErrors.add("Os valores " + dir + " e " + esq + " devem ser números de um mesmo tipo");
         }
     };
-    public void visit (Not e) {
+
+    public void visit(Not e) {
         e.getN().accept(this);
         Object op = operands.pop();
 
-        if ( op instanceof Boolean) {
+        if (op instanceof Boolean) {
             operands.push(new Boolean(!(Boolean) op));
         } else {
             semanticErrors.add("Os valores devem ser booleanos para serem negados");
@@ -402,36 +417,39 @@ public class SemanticVisitor extends Visitor {
         }
 
     };
-    public void visit (True e) {
+
+    public void visit(True e) {
         operands.push(new Boolean(true));
 
     };
-    public void visit (False e) {
+
+    public void visit(False e) {
         operands.push(new Boolean(false));
 
     };
-    public void visit (Null e) {
+
+    public void visit(Null e) {
         operands.push(null);
 
     };
-    public void visit (Empty e) {
-        operands.push(null);
-    };
-    public void visit (IntegerVar e) {
+
+    public void visit(IntegerVar e) {
         try {
             operands.push(new Integer(e.getValue()));
         } catch (Exception x) {
             semanticErrors.add("O valor " + e.getValue() + " não pode ser um inteiro");
         }
     };
-    public void visit (FloatVar e) {
+
+    public void visit(FloatVar e) {
         try {
             operands.push(new Float(e.getValue()));
         } catch (Exception x) {
             semanticErrors.add("O valor " + e.getValue() + " não pode ser um float");
         }
     };
-    public void visit (CharacterVar e) {
+
+    public void visit(CharacterVar e) {
         try {
             operands.push(new String(e.getValue()));
         } catch (Exception x) {
@@ -439,27 +457,31 @@ public class SemanticVisitor extends Visitor {
         }
     };
 
-    public void visit (ID e) {
-         Object v = globalEnv.peek().get(e.getName());
+    public void visit(ID e) {
+        Object v = globalEnv.peek().get(e.getName());
 
         if (v != null) {
             operands.push(v);
         } else {
-            semanticErrors.add("Variável ' " + e.getName() + " ' não declarada na linha " + e.getLine() + " coluna " + e.getColumn() );
+            semanticErrors.add("Variável ' " + e.getName() + " ' não declarada na linha " + e.getLine() + " coluna "
+                    + e.getColumn());
         }
     };
 
-    public void visit (Array e) {};
-    public void visit (Component e) {};
+    public void visit(Array e) {
+    };
 
-    public void visit (If e) {
+    public void visit(Component e) {
+    };
+
+    public void visit(If e) {
         if (retMode == true)
             return;
 
         e.getTeste().accept(this);
         Object test = operands.pop();
-        if (test instanceof Boolean){
-            if ((Boolean)test){
+        if (test instanceof Boolean) {
+            if ((Boolean) test) {
                 e.getThen().accept(this);
             } else if (e.getElse() != null) {
                 e.getElse().accept(this);
@@ -471,33 +493,35 @@ public class SemanticVisitor extends Visitor {
 
     };
 
-    public void visit (Iterate e) {
+    public void visit(Iterate e) {
         if (retMode == true)
             return;
 
         e.getTeste().accept(this);
 
-            int counter = 0;
-            int stop = (Integer) operands.pop();
-            while (counter < stop) {
-                e.getBody().accept(this);
-                counter++;
-            }
+        int counter = 0;
+        int stop = (Integer) operands.pop();
+        while (counter < stop) {
+            e.getBody().accept(this);
+            counter++;
+        }
     };
-    public void visit (Print e) {
+
+    public void visit(Print e) {
         if (retMode == true)
             return;
     };
-    public void visit (Read e) {
+
+    public void visit(Read e) {
         if (retMode == true)
             return;
 
     };
 
-    public void visit (NodeList e) {
+    public void visit(NodeList e) {
         e.getCmd1().accept(this);
-            
-        if ( e.getCmd2() != null)
+
+        if (e.getCmd2() != null)
             e.getCmd2().accept(this);
 
     };
@@ -508,10 +532,10 @@ public class SemanticVisitor extends Visitor {
 
         Stack<Class<?>> passedArguments = new Stack<>();
 
-        for (Expr exp: e.getArgs()) {
+        for (Expr exp : e.getArgs()) {
             exp.accept(this);
             Object v = operands.pop();
-            passedArguments.add(v.getClass());
+            passedArguments.add(updateType(v.getClass()));
         }
 
         String signature = generateFunctionSignature(e.getName(), passedArguments);
@@ -524,7 +548,7 @@ public class SemanticVisitor extends Visitor {
 
         Stack<Class<?>> expectedArguments = new Stack<>();
 
-        for (Param par: f.getParams()){
+        for (Param par : f.getParams()) {
             expectedArguments.add(getClassFromTypeName((Literal) par.getParamType()));
         }
 
@@ -535,15 +559,14 @@ public class SemanticVisitor extends Visitor {
 
         for (int i = 0; i < expectedArguments.size(); i++) {
 
-            if (expectedArguments.get(i) != null){
-                if (!expectedArguments.get(i).equals(passedArguments.get(i)) ) {
-                    semanticErrors.add("Tipo de retorno não corresponde na posição " + (i + 1) + " para a função -> " + e.getName());
+            if (expectedArguments.get(i) != null) {
+                if (!expectedArguments.get(i).equals(passedArguments.get(i))) {
+                    semanticErrors.add(
+                            "Tipo de retorno não corresponde na posição " + (i + 1) + " para a função -> " + signature);
                 }
             }
 
-        
         }
-
 
         Stack<Class<?>> expectedReturnType = new Stack<>();
         NodeList expectedReturn = e.getReturn();
@@ -561,13 +584,12 @@ public class SemanticVisitor extends Visitor {
         }
 
         // Obtenção do tipo de retorno declarado da função
-     
 
         Stack<Class<?>> declaredReturnType = new Stack<>();
         NodeList declaredReturn = f.getReturnType();
         while (declaredReturn != null) {
             Literal type = (Literal) declaredReturn.getCmd1();
-            declaredReturnType.add( getClassFromTypeName(type));
+            declaredReturnType.add(getClassFromTypeName(type));
             declaredReturn = declaredReturn.getCmd2();
         }
 
@@ -579,13 +601,13 @@ public class SemanticVisitor extends Visitor {
 
         for (int i = 0; i < expectedReturnType.size(); i++) {
 
-            if (expectedReturnType.get(i) != null){
-                if (!expectedReturnType.get(i).equals(declaredReturnType.get(i)) ) {
-                    semanticErrors.add("Tipo de retorno não corresponde na posição " + (i+1) + " para a função -> " + e.getName());
+            if (expectedReturnType.get(i) != null) {
+                if (!expectedReturnType.get(i).equals(declaredReturnType.get(i))) {
+                    semanticErrors.add("Tipo de retorno não corresponde na posição " + (i + 1) + " para a função -> "
+                            + e.getName());
                 }
             }
 
-        
         }
 
         for (Node node : e.getArgs()) {
@@ -595,7 +617,19 @@ public class SemanticVisitor extends Visitor {
         f.accept(this);
     }
 
-    public void visit(IndexedCall e) {   
+    public Class<?> updateType(Class<?> type) {
+        if (type == String.class) {
+            return Character.class;
+        } else if (type.getSimpleName().equals("Param[]")) {
+            return DataType.class;
+        } else if (type.getSimpleName().equals("Object[]")) {
+            return Vector.class;
+        } else {
+            return type;
+        }
+    }
+
+    public void visit(IndexedCall e) {
         Stack<Class<?>> passedArguments = new Stack<>();
         for (Node node : e.getParams()) {
             node.accept(this);
@@ -613,7 +647,7 @@ public class SemanticVisitor extends Visitor {
             f.accept(this);
 
             NodeList rt = f.getReturnType();
-            
+
             int totalReturns = 1;
             while (rt.getCmd2() != null) {
                 totalReturns++;
@@ -624,8 +658,8 @@ public class SemanticVisitor extends Visitor {
             int index = (int) operands.pop();
             int i = totalReturns;
             Object result = null;
-            
-            while ( i > 0) {
+
+            while (i > 0) {
                 Object aux = operands.pop();
                 i--;
 
@@ -633,19 +667,19 @@ public class SemanticVisitor extends Visitor {
                     result = aux;
                 }
             }
-            if ( result == null)
+            if (result == null)
                 semanticErrors.add("Indice fora do range do retorno da função");
-            
+
             operands.push(result);
 
         } else {
             semanticErrors.add("Função não definida com essa assinatura -> " + signature);
         }
-   
+
     }
 
-    public void visit (Instance e) {
-         Literal nameType = (Literal) e.getType();
+    public void visit(Instance e) {
+        Literal nameType = (Literal) e.getType();
         if (nameType.getType() == null) {
             semanticErrors.add("Tipo de Data não é um tipo válido ");
 
@@ -667,22 +701,34 @@ public class SemanticVisitor extends Visitor {
             }
 
             operands.push(datas.get(n.getName()));
-        } 
+        }
     };
-    public void visit (Param e) {
+
+    public void visit(Param e) {
         e.getParamType().accept(this);
     };
-    public void visit (BoolType e) {};
-    public void visit (CharType e) {};
-    public void visit (FloatType e) {};
-    public void visit (IntType e) {};
-    public void visit (DataType e) {};
-    public void visit (Vector e) {};
 
-    public void visit (Data e) {
-        datas.put( e.getName(), e.getDecl());
+    public void visit(BoolType e) {
+    };
+
+    public void visit(CharType e) {
+    };
+
+    public void visit(FloatType e) {
+    };
+
+    public void visit(IntType e) {
+    };
+
+    public void visit(DataType e) {
+    };
+
+    public void visit(Vector e) {
+    };
+
+    public void visit(Data e) {
+        datas.put(e.getName(), e.getDecl());
 
     };
-    public void visit (Expr e) {};
 
 }

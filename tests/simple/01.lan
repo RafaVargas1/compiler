@@ -6,7 +6,23 @@ fibonacci(n :: Int) : Int {
   return fibonacci(n-1)[0] + fibonacci(n-2)[0];
 }
 
+data Ponto {
+  x :: Int;
+  y :: Int;
+}
+
+tudo(a :: Int, b :: Float, c :: Char, d :: Bool, e :: Ponto, f :: Int[]) {
+  print '!';
+}
+
 main() {
+  a = 2;
+  b = 1.2;
+  c = 'c';
+  d = true;
+  e = new Ponto;
+  f = new Int[10];
+  tudo(a,b,c,d,e,f);
   v = fibonacci(7)[0];
   print v;
 }
