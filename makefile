@@ -1,14 +1,9 @@
 .PHONY: build
 
-compile: parser lexer build file
-
-r: build file
-
-file:
-	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar lang.tR
+compile: parser lexer build
 
 run:
-	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar lang.LangCompiler -bs
+	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar lang.LangCompiler $(option) $(file)
 	
 lexer:
 	java -jar ./lang/tools/jflex-full-1.8.2.jar ./lang/lexer/lang.flex 

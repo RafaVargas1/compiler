@@ -31,11 +31,12 @@ public class TestParser {
         };
     }
 
-    public void runOkTests() {
+    public void runOkTests(String path) {
         File inst[];
         int flips, flops;
         flips = 0;
         flops = 0;
+        this.f = new File(path);
         try {
             if (f.isDirectory()) {
                 String pth;
