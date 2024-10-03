@@ -16,6 +16,7 @@ import lang.parser.LangParser;
 import lang.parser.LangParserAdaptor;
 import lang.parser.ParseAdaptor;
 import lang.visitor.InterpreterVisitor;
+import lang.visitor.JasminVisitor;
 
 public class LangCompiler {
     // Recupera o nome base (sem extensão) de um arquivo.
@@ -36,6 +37,8 @@ public class LangCompiler {
         }
         try {
             ParseAdaptor langParser = new LangParserAdaptor();
+            if (args.length <= 0)
+                return;
 
             if (args[0].equals("run_parser")) {
                 System.out.println("Executando teste sintático:");
@@ -157,6 +160,7 @@ public class LangCompiler {
                 }
                 return;
             }
+
             if (args[0].equals("runall")) {
                 System.out.println("Executando bateria de testes no interpretador:");
                 File directory = new File(args[1]);
@@ -182,6 +186,43 @@ public class LangCompiler {
                             } else {
                                 InterpreterVisitor interpreterVisitor = new InterpreterVisitor();
                                 ast.accept(interpreterVisitor);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Erro inesperado ao processar o arquivo " + file.getName() + ": " + e);
+                        }
+                    }
+                } else {
+                    System.out.println("Nenhum arquivo .lan encontrado na pasta " + directory.getName() + ".");
+                }
+                return;
+            }
+
+            if (args[0].equals("s")) {
+                System.out.println("Executando bateria de testes no interpretador:");
+                File directory = new File(args[1]);
+                File[] files = directory.listFiles((dir, name) -> name.endsWith(".lan"));
+                if (files != null && files.length > 0) {
+                    for (File file : files) {
+                        System.out.println("\nProcessing file: " + file.getName());
+                        try (FileReader fileReader = new FileReader(file)) {
+                            LangScanner lexicResult = new LangScanner(fileReader);
+                            LangParser parser = new LangParser();
+                            Program ast = (Program) parser.parse(lexicResult);
+
+                            // Verificação semântica
+                            SemanticVisitor semanticVisitor = new SemanticVisitor();
+                            ast.accept(semanticVisitor);
+
+                            if (!semanticVisitor.getSemanticErrors().isEmpty()) {
+                                System.err.println("Erros semânticos encontrados no arquivo: " + file.getName());
+                                for (String error : semanticVisitor.getSemanticErrors()) {
+                                    System.err.println(error);
+                                }
+                            } else {
+                                // InterpreterVisitor interpreterVisitor = new InterpreterVisitor();
+                                // ast.accept(interpreterVisitor);
+                                JasminVisitor jasminVisitor = new JasminVisitor();
+                                ast.accept(jasminVisitor);
                             }
                         } catch (Exception e) {
                             System.err.println("Erro inesperado ao processar o arquivo " + file.getName() + ": " + e);
