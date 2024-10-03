@@ -5,7 +5,7 @@ compile: parser lexer build
 r: build run 
 
 run:
-	java -cp .:./build:./lang/tools/beaver-rt-0.9.11.jar:./lang/tools/jasmin.jar:./lang/tools/ST-4.3.1.jar lang.LangCompiler $(option) $(file)
+	java -cp ./build:./lang/tools/beaver-rt-0.9.11.jar:./lang/tools/jasmin.jar:./lang/tools/ST-4.3.1.jar lang.LangCompiler $(option) $(file)
 	
 lexer:
 	java -jar ./lang/tools/jflex-full-1.8.2.jar ./lang/lexer/lang.flex 

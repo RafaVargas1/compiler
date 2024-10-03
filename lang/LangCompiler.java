@@ -208,7 +208,6 @@ public class LangCompiler {
                             LangScanner lexicResult = new LangScanner(fileReader);
                             LangParser parser = new LangParser();
                             Program ast = (Program) parser.parse(lexicResult);
-
                             // Verificação semântica
                             SemanticVisitor semanticVisitor = new SemanticVisitor();
                             ast.accept(semanticVisitor);
