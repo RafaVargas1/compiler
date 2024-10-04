@@ -197,7 +197,7 @@ public class LangCompiler {
                 return;
             }
 
-            if (args[0].equals("s")) {
+            if (args[0].equals("j")) {
                 System.out.println("Executando bateria de testes no interpretador:");
                 File directory = new File(args[1]);
                 File[] files = directory.listFiles((dir, name) -> name.endsWith(".lan"));
@@ -208,7 +208,6 @@ public class LangCompiler {
                             LangScanner lexicResult = new LangScanner(fileReader);
                             LangParser parser = new LangParser();
                             Program ast = (Program) parser.parse(lexicResult);
-                            // Verificação semântica
                             SemanticVisitor semanticVisitor = new SemanticVisitor();
                             ast.accept(semanticVisitor);
 
@@ -218,8 +217,39 @@ public class LangCompiler {
                                     System.err.println(error);
                                 }
                             } else {
-                                // InterpreterVisitor interpreterVisitor = new InterpreterVisitor();
-                                // ast.accept(interpreterVisitor);
+                                JasminVisitor jasminVisitor = new JasminVisitor();
+                                ast.accept(jasminVisitor);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Erro inesperado ao processar o arquivo " + file.getName() + ": " + e);
+                        }
+                    }
+                } else {
+                    System.out.println("Nenhum arquivo .lan encontrado na pasta " + directory.getName() + ".");
+                }
+                return;
+            }
+
+             if (args[0].equals("i")) {
+                System.out.println("Executando bateria de testes no interpretador:");
+                File directory = new File(args[1]);
+                File[] files = directory.listFiles((dir, name) -> name.endsWith(".lan"));
+                if (files != null && files.length > 0) {
+                    for (File file : files) {
+                        System.out.println("\nProcessing file: " + file.getName());
+                        try (FileReader fileReader = new FileReader(file)) {
+                            LangScanner lexicResult = new LangScanner(fileReader);
+                            LangParser parser = new LangParser();
+                            Program ast = (Program) parser.parse(lexicResult);
+                            SemanticVisitor semanticVisitor = new SemanticVisitor();
+                            ast.accept(semanticVisitor);
+
+                            if (!semanticVisitor.getSemanticErrors().isEmpty()) {
+                                System.err.println("Erros semânticos encontrados no arquivo: " + file.getName());
+                                for (String error : semanticVisitor.getSemanticErrors()) {
+                                    System.err.println(error);
+                                }
+                            } else {
                                 JasminVisitor jasminVisitor = new JasminVisitor();
                                 ast.accept(jasminVisitor);
                             }

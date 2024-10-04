@@ -4,7 +4,6 @@ import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
 import org.stringtemplate.v4.ST;
 
-
 import lang.ast.*;
 import lang.visitor.Visitor;
 
@@ -116,30 +115,6 @@ public class JasminVisitor extends Visitor {
                             .render());
     }
 
-
-
-    // public void visit(Return e) {
-    //     // Gerar código Jasmin para instruções de retorno
-    //     ST returnTemplate = groupTemplate.getInstanceOf("return");
-    //     // e.getExpr().accept(this);  // Visita o valor de retorno
-
-    //     jasminCode.add(returnTemplate.render());
-    // }
-
-    // public void visit(If e) {
-    //     // Gerar código Jasmin para instruções if
-    //     ST ifTemplate = groupTemplate.getInstanceOf("ifStmt");
-    //     e.getTeste().accept(this);  // Visita a condição
-
-    //     ifTemplate.add("thenBlock", e.getThen());
-    //     if (e.getElse() != null) {
-    //         ifTemplate.add("elseBlock", e.getElse());
-    //     }
-
-    //     jasminCode.add(ifTemplate.render());
-    // }
-
-    
     public void visit(Data e){
 
     } 
@@ -148,9 +123,7 @@ public class JasminVisitor extends Visitor {
     public void visit(NodeList e){
 
     } 
-    
 
-    
     public void visit(Subtraction e){
 
     } 
