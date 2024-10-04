@@ -1,0 +1,152 @@
+group jasmin;
+
+program(name, funcs) ::= <<
+.source <name>
+.class public <name>
+.super java/lang/Object
+
+    <funcs; separator="\n\n">
+
+    .method public static main([Ljava/lang/String;)V
+        .limit stack 1
+        invokestatic <name>/inicio()I
+        return
+    .end method
+>>
+
+func(return, name, params, decls, stack, stmt) ::= <<
+.method static <name>(<params>)<return>
+    .limit stack <stack>
+    .limit locals <decls>
+    <stmt>
+.end method
+>>
+
+array_type(type) ::= "[<type>"
+int_type() ::= "I"
+float_type() ::= "F"
+boolean_type() ::= "Z"
+
+stmt_list(stmt1, stmt2) ::= <<
+<stmt1>
+<stmt2>
+>>
+
+iprint(expr) ::= <<
+getstatic java/lang/System/out Ljava/io/PrintStream;
+<expr>
+invokevirtual java/io/PrintStream/println(I)V
+>>
+
+ireturn(expr) ::= <<
+<expr>
+ireturn
+>>
+
+
+
+
+while(expr, stmt) ::= <<
+while(<expr>) {
+    <stmt>
+}
+>>
+
+if(expr, thn, els) ::= <<
+if(<expr>) {
+    <thn>
+} <if(els)>else {
+    <els>
+}
+<endif>
+>>
+
+
+
+
+
+
+
+new_array(var, type, expr) ::= "<var> = new <type>[<expr>];"
+
+
+
+
+
+
+call(class, name, type, return, args) ::= <<
+<args; separator="\n">
+invokestatic <class>/<name>(<type>)<return>
+>>
+
+istore(num, expr) ::= <<
+<expr>
+istore <num>
+>>
+
+iastore(num, index, expr) ::= <<
+aload <num>
+<index>
+<expr>
+iastore
+>>
+
+iaccess(num) ::= "iload <num>"
+
+iaaccess(num, expr) ::= <<
+aload <num>
+<expr>
+iaload
+>>
+
+imul(left_expr, right_expr) ::= <<
+<left_expr>
+<right_expr>
+imul
+>>
+
+idiv(left_expr, right_expr) ::= <<
+<left_expr>
+<right_expr>
+idiv
+>>
+
+imod(left_expr, right_expr) ::= <<
+<left_expr>
+<right_expr>
+irem
+>>
+
+iadd(left_expr, right_expr) ::= <<
+<left_expr>
+<right_expr>
+iadd
+>>
+
+isub(left_expr, right_expr) ::= <<
+<left_expr>
+<right_expr>
+isub
+>>
+
+
+
+
+
+
+
+
+lt_expr(left_expr, right_expr) ::= "(<left_expr> \< <right_expr>)"
+equals_expr(left_expr, right_expr) ::= "(<left_expr> == <right_expr>)"
+and_expr(left_expr, right_expr) ::= "(<left_expr> && <right_expr>)"
+not_expr(expr) ::= "!<expr>"
+
+
+
+
+
+
+boolean_true() ::= "iconst_1"
+boolean_false() ::= "iconst_0"
+float_expr(value) ::= "ldc <value>"
+int_expr(value) ::= "sipush <value>"

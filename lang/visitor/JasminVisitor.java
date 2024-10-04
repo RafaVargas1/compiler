@@ -4,91 +4,142 @@ import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
 import org.stringtemplate.v4.ST;
 
+
 import lang.ast.*;
 import lang.visitor.Visitor;
 
 import java.util.List;
+import java.util.Stack;
+import java.beans.Expression;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class JasminVisitor extends Visitor {
+    private Stack<HashMap<String, Object>> globalEnv;
+    private HashMap<String, Function> funcs;
+    private Stack<Object> operands;
+    private HashMap<String, Object> datas;
+
+    private boolean retMode;
 
     private STGroup groupTemplate;
-    private List<String> jasminCode;
+    private StringBuilder jasminCode;
 
     public JasminVisitor() {
-        groupTemplate = new STGroupFile("./tools/jasmin.stg");  // Carrega o template Jasmin
-        jasminCode = new ArrayList<>();
+        groupTemplate = new STGroupFile("./lang/tools/template/jasmin.stg");  // Carrega o template Jasmin
+        jasminCode = new StringBuilder();
+
+        globalEnv = new Stack<HashMap<String, Object>>();
+        globalEnv.push(new HashMap<String, Object>());
+
+        funcs = new HashMap<String, Function>();
+        operands = new Stack<Object>();
+        datas = new HashMap<String, Object>();
+
+        retMode = false;
     }
 
-    public void visit(Function e) {
-        // Gerar o código Jasmin para funções
-        ST funcTemplate = groupTemplate.getInstanceOf("function");
-        funcTemplate.add("name", e.getName());
-        funcTemplate.add("params", e.getParams());
-        funcTemplate.add("returnType", e.getReturnType());
-
-        e.getBody().accept(this);  // Visita o corpo da função
-
-        jasminCode.add(funcTemplate.render());  // Adiciona o código gerado
-    }
-
-    public void visit(Call e) {
-        // Gerar código Jasmin para chamadas de função
-        ST callTemplate = groupTemplate.getInstanceOf("call");
-        callTemplate.add("name", e.getName());
-
-        for (Expr arg : e.getArgs()) {
-            arg.accept(this);  // Visita os argumentos da chamada
+    public void visit(Program program) {
+        // Usar o template correto para gerar a definição da classe
+        String classTemplate = templates.getInstanceOf("program")
+                                .add("name", program.getClassName())
+                                .add("funcs", ""); // Placeholder para as funções
+        jasminCode.append(classTemplate);
+        
+        // Visitar todas as declarações internas
+        for (Node statement : program.getStatements()) {
+            statement.accept(this);
         }
-
-        jasminCode.add(callTemplate.render());
     }
 
-    public void visit(Atribuition e) {
-        // Gerar código Jasmin para variáveis
-        ST varTemplate = groupTemplate.getInstanceOf("variable");
-        varTemplate.add("name", e.getName());
-        // varTemplate.add("type", Object);
 
-        jasminCode.add(varTemplate.render());
-    }
-
-    public void visit(Addition e) {
-        // Gerar código Jasmin para expressões binárias
-        e.getA().accept(this);  // Visita o operando esquerdo
-        e.getB().accept(this); // Visita o operando direito
-
-        ST binaryTemplate = groupTemplate.getInstanceOf("binaryExpr");
-        binaryTemplate.add("op", '+');
-
-        jasminCode.add(binaryTemplate.render());
-    }
-
-    public void visit(Return e) {
-        // Gerar código Jasmin para instruções de retorno
-        ST returnTemplate = groupTemplate.getInstanceOf("return");
-        // e.getExpr().accept(this);  // Visita o valor de retorno
-
-        jasminCode.add(returnTemplate.render());
-    }
-
-    public void visit(If e) {
-        // Gerar código Jasmin para instruções if
-        ST ifTemplate = groupTemplate.getInstanceOf("ifStmt");
-        e.getTeste().accept(this);  // Visita a condição
-
-        ifTemplate.add("thenBlock", e.getThen());
-        if (e.getElse() != null) {
-            ifTemplate.add("elseBlock", e.getElse());
+    public void visit(Function function) {
+        // Gerar a assinatura da função usando o template correto
+        String functionTemplate = templates.getInstanceOf("func")
+                                .add("name", function.getName())
+                                .add("params", getParamsSignature(function))
+                                .add("return", getReturnType(function))
+                                .add("decls", 10) // Exemplo de limite de locais
+                                .add("stack", 10) // Exemplo de limite de pilha
+                                .add("stmt", ""); // Placeholder para o corpo da função
+        jasminCode.append(functionTemplate);
+        
+        // Visitar o corpo da função
+        for (Node statement : function.getBody()) {
+            statement.accept(this);
         }
-
-        jasminCode.add(ifTemplate.render());
     }
 
-    public void visit(Program e) {
-        System.out.println("iNicio jasmin");
+
+
+    public void visit(Call call) {
+        // Empilhar os argumentos da chamada
+        for (Expression arg : call.getArguments()) {
+            arg.accept(this);
+        }
+        
+        // Gerar o código para invocar o método usando o template "call"
+        jasminCode.append(templates.getInstanceOf("call")
+                            .add("class", call.getClassName())
+                            .add("name", call.getMethodName())
+                            .add("type", getMethodSignature(call))
+                            .add("return", getReturnType(call))
+                            .add("args", "")) // Placeholder para os argumentos
+                            .render();
     }
 
+
+
+    public void visit(Atribuition attribuition) {
+        // Visitar a expressão do lado direito (o valor a ser atribuído)
+        attribuition.getExpr().accept(this)
+        Integer num = (Integer) globalEnv.peek().get(attribuition.getName())
+        // Gerar o código para armazenar o valor na variável local usando o template "istore"
+        jasminCode.append(templates.getInstanceOf("istore")
+                            .add("num", num)
+                            .add("expr", operands.pop())
+                            .render());
+    }
+
+
+    public void visit(Addition addition) {
+        // Visitar o operando da esquerda
+        addition.getA().accept(this);
+        
+        // Visitar o operando da direita
+        addition.getB().accept(this);
+        
+        // Gerar a instrução de adição usando o template "iadd"
+        jasminCode.append(templates.getInstanceOf("iadd")
+                            .add("left_expr", addition.getA().toString())
+                            .add("right_expr", addition.getB().toString())
+                            .render());
+    }
+
+
+
+    // public void visit(Return e) {
+    //     // Gerar código Jasmin para instruções de retorno
+    //     ST returnTemplate = groupTemplate.getInstanceOf("return");
+    //     // e.getExpr().accept(this);  // Visita o valor de retorno
+
+    //     jasminCode.add(returnTemplate.render());
+    // }
+
+    // public void visit(If e) {
+    //     // Gerar código Jasmin para instruções if
+    //     ST ifTemplate = groupTemplate.getInstanceOf("ifStmt");
+    //     e.getTeste().accept(this);  // Visita a condição
+
+    //     ifTemplate.add("thenBlock", e.getThen());
+    //     if (e.getElse() != null) {
+    //         ifTemplate.add("elseBlock", e.getElse());
+    //     }
+
+    //     jasminCode.add(ifTemplate.render());
+    // }
+
+    
     public void visit(Data e){
 
     } 
@@ -239,8 +290,66 @@ public class JasminVisitor extends Visitor {
 
     // Métodos adicionais para outros nós da AST...
 
-    public List<String> getJasminCode() {
+    public StringBuilder getJasminCode() {
         return jasminCode;
+    }
+
+    // Funções auxiliares
+    public String generateFunctionSignature(String name, Stack<Literal> parameterTypes) {
+        StringBuilder signature = new StringBuilder(name);
+
+        signature.append("(");
+
+        for (Literal paramType : parameterTypes) {
+            if (paramType != null) {
+                signature.append(paramType.getType());
+            }
+            signature.append(",");
+        }
+
+        if (!parameterTypes.isEmpty()) {
+            signature.setLength(signature.length() - 1); 
+        }
+
+        signature.append(")");
+
+        return signature.toString();
+    }
+
+    public String generateFunctionSignature(String name, String[] params) {
+        StringBuilder signature = new StringBuilder(name);
+
+        signature.append("(");
+
+        for (String paramType : params) {
+            signature.append(paramType);
+            signature.append(",");
+        }
+        
+        signature.setLength(signature.length() - 1); 
+
+        signature.append(")");
+
+        return signature.toString();
+    }
+
+    public String renameType(String type) {
+        switch (type) {
+            case "Integer":
+                return "INT";
+            case "Float":
+                return "FLOAT";
+            case "String":
+                return "CHAR";
+            case "Boolean":
+                return "BOOL";
+            case "Object[]":
+                return "VECTOR";
+            case "Param[]":
+                return "DATA";       
+            default:
+            throw new RuntimeException("Tipo inválido.");
+        }
     }
 
 
